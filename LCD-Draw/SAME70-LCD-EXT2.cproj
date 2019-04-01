@@ -1476,6 +1476,18 @@
     <Compile Include="src\icones\lavagem.h">
       <SubType>compile</SubType>
     </Compile>
+    <Compile Include="src\icones\lock-grey.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="src\icones\lock.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="src\icones\unlock-grey.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="src\icones\unlock.h">
+      <SubType>compile</SubType>
+    </Compile>
     <Compile Include="src\logo.h">
       <SubType>compile</SubType>
     </Compile>
