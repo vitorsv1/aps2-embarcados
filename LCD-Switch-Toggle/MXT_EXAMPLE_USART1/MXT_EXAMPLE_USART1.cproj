@@ -288,7 +288,7 @@
       </framework-data>
     </AsfFrameworkConfig>
     <avrtool>com.atmel.avrdbg.tool.edbg</avrtool>
-    <avrtoolserialnumber>ATML2637010000000009</avrtoolserialnumber>
+    <avrtoolserialnumber>FFFFFFFFFFFFFFFFFFFF</avrtoolserialnumber>
     <avrdeviceexpectedsignature>0xA1020E01</avrdeviceexpectedsignature>
     <avrtoolinterface>SWD</avrtoolinterface>
     <com_atmel_avrdbg_tool_edbg>
@@ -299,7 +299,7 @@
         <InterfaceName>SWD</InterfaceName>
       </ToolOptions>
       <ToolType>com.atmel.avrdbg.tool.edbg</ToolType>
-      <ToolNumber>ATML2637010000000009</ToolNumber>
+      <ToolNumber>FFFFFFFFFFFFFFFFFFFF</ToolNumber>
       <ToolName>EDBG</ToolName>
     </com_atmel_avrdbg_tool_edbg>
     <avrtoolinterfaceclock>2000000</avrtoolinterfaceclock>
@@ -678,6 +678,7 @@
     <Folder Include="src\ASF\thirdparty\CMSIS\Lib\" />
     <Folder Include="src\ASF\thirdparty\CMSIS\Lib\GCC\" />
     <Folder Include="src\config\" />
+    <Folder Include="src\icones\" />
   </ItemGroup>
   <ItemGroup>
     <None Include="src\asf.h">
@@ -1337,6 +1338,24 @@
     <None Include="src\config\conf_ili9488.h">
       <SubType>compile</SubType>
     </None>
+    <Compile Include="src\icones\bloqueio.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="src\icones\lavagem.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="src\icones\lock-grey.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="src\icones\lock.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="src\icones\unlock-grey.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="src\icones\unlock.h">
+      <SubType>compile</SubType>
+    </Compile>
     <Compile Include="src\main.c">
       <SubType>compile</SubType>
     </Compile>

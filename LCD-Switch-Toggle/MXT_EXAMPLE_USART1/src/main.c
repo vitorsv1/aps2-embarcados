@@ -92,6 +92,30 @@
 #include "conf_example.h"
 #include "conf_uart_serial.h"
 
+ typedef struct {
+	 const uint8_t *data;
+	 uint16_t width;
+	 uint16_t height;
+	 uint8_t dataSize;
+ } tImage;
+ 
+ 
+typedef struct {
+	uint   state;
+	tImage icon1;
+	tImage icon2;
+	uint16_t x0;
+	uint16_t y0;
+	void (*callback)();
+} button;
+
+#include "logo.h"
+#include "icones/wash.h"
+#include "icones/lock_white.h"
+#include "icones/unlock_white.h"
+#include "icones/lock_grey.h"
+#include "icones/unlock_grey.h"
+
 #define MAX_ENTRIES        3
 #define STRING_LENGTH     70
 
@@ -103,7 +127,12 @@ const uint32_t BUTTON_H = 150;
 const uint32_t BUTTON_BORDER = 2;
 const uint32_t BUTTON_X = ILI9488_LCD_WIDTH/2;
 const uint32_t BUTTON_Y = ILI9488_LCD_HEIGHT/2;
-	
+const uint32_t BUTTON_LOCK_X = 220;
+const uint32_t BUTTON_LOCK_SIZE = 93;
+
+struct ili9488_opt_t g_ili9488_display_opt;
+
+
 static void configure_lcd(void){
 	/* Initialize display parameter */
 	g_ili9488_display_opt.ul_width = ILI9488_LCD_WIDTH;
@@ -229,6 +258,20 @@ void draw_button(uint32_t clicked) {
 	last_state = clicked;
 }
 
+void draw_icon_button(button b) {
+	if(b.state) {
+		ili9488_draw_pixmap(b.x0, b.y0, b.icon2.width, b.icon2.height, b.icon2.data);
+	} else {
+		ili9488_draw_pixmap(b.x0, b.y0, b.icon1.width, b.icon1.height, b.icon1.data);
+	}
+}
+
+void draw_buttons(button b[], int size){
+	for (int i = 0; i < size; i++){
+		draw_icon_button(b[i]);
+	}
+}
+
 uint32_t convert_axis_system_x(uint32_t touch_y) {
 	// entrada: 4096 - 0 (sistema de coordenadas atual)
 	// saida: 0 - 320
@@ -242,6 +285,7 @@ uint32_t convert_axis_system_y(uint32_t touch_x) {
 }
 
 void update_screen(uint32_t tx, uint32_t ty) {
+		
 	if(tx >= BUTTON_X-BUTTON_W/2 && tx <= BUTTON_X + BUTTON_W/2) {
 		if(ty >= BUTTON_Y-BUTTON_H/2 && ty <= BUTTON_Y) {
 			draw_button(0);
@@ -251,11 +295,12 @@ void update_screen(uint32_t tx, uint32_t ty) {
 	}
 }
 
-void mxt_handler(struct mxt_device *device)
+int mxt_handler(struct mxt_device *device, uint16_t *x, uint16_t *y)
 {
 	/* USART tx buffer initialized to 0 */
 	char tx_buf[STRING_LENGTH * MAX_ENTRIES] = {0};
 	uint8_t i = 0; /* Iterator */
+	uint8_t found =0;
 
 	/* Temporary touch event data struct */
 	struct mxt_touch_event touch_event;
@@ -274,12 +319,16 @@ void mxt_handler(struct mxt_device *device)
 		 // eixos trocados (quando na vertical LCD)
 		uint32_t conv_x = convert_axis_system_x(touch_event.y);
 		uint32_t conv_y = convert_axis_system_y(touch_event.x);
+		found = 1;
+		
+		*x = conv_x;
+		*y = conv_y;
 		
 		/* Format a new entry in the data string that will be sent over USART */
 		sprintf(buf, "Nr: %1d, X:%4d, Y:%4d, Status:0x%2x conv X:%3d Y:%3d\n\r",
 				touch_event.id, touch_event.x, touch_event.y,
 				touch_event.status, conv_x, conv_y);
-		update_screen(conv_x, conv_y);
+		//update_screen(conv_x, conv_y);
 
 		/* Add the new string to the string buffer */
 		strcat(tx_buf, buf);
@@ -293,10 +342,45 @@ void mxt_handler(struct mxt_device *device)
 	if (i > 0) {
 		usart_serial_write_packet(USART_SERIAL_EXAMPLE, (uint8_t *)tx_buf, strlen(tx_buf));
 	}
+	
+	return(found);
+}
+
+
+void callback_lock(button b){
+	b.state = b.state == 1 ? 2 : 1;
+}
+
+int isPressed(button b, uint16_t x, uint16_t y){
+	tImage icon = b.state == 1 ? b.icon1 : b.icon2;
+	
+	if (x >= b.x0 && x <= (b.x0 + icon.width)){
+		if (y >= b.y0 && y <= (b.y0 + icon.height)){
+			return 1;
+		}
+	}
+	return 0;
+}
+
+int touch_buttons(button b[],uint8_t size , uint16_t xTouch, uint16_t yTouch){
+	for(int i = 0; i < size; i++){
+		if(isPressed(b[i], xTouch, yTouch)){
+			return i;
+		}
+	}
 }
 
 int main(void)
 {
+	
+	button b_lock = {.x0 = 0, .y0 = 0, .state = 0, .icon1 = lock_white, .icon2 = unlock_white, .callback = callback_lock};
+	//button b_wash = {.x0 = 0, .y0 = 0, .state = 0, .icon1 = wash, .icon2 = wash, .callback = callback_wasg};
+	
+	uint8_t size = 1;
+	button buttons[] = {b_lock};
+	
+	
+	
 	struct mxt_device device; /* Device data container */
 
 	/* Initialize the USART configuration struct */
@@ -320,12 +404,21 @@ int main(void)
 
 	printf("\n\rmaXTouch data USART transmitter\n\r");
 		
+	
 
 	while (true) {
 		/* Check for any pending messages and run message handler if any
 		 * message is found in the queue */
+		uint16_t x,y;
+		
+		draw_buttons(buttons, size);
+		
 		if (mxt_is_message_pending(&device)) {
-			mxt_handler(&device);
+			uint8_t found = mxt_handler(&device, &x, &y);
+			if(found){
+				uint index = touch_buttons(buttons, size, x, y);
+				buttons[index].callback();
+			}
 		}
 		
 	}
