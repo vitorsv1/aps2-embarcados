@@ -15,6 +15,7 @@ struct ciclo{
   t_ciclo *next;
 };
 
+
 t_ciclo c_rapido = {.nome = "Rapido",
                     .enxagueTempo = 5,
                     .enxagueQnt = 3,
@@ -61,7 +62,8 @@ t_ciclo c_centrifuga = {.nome = "Centrifuga",
 };
 
 
+
+
 t_ciclo *initMenuOrder();
 
 #endif
-main.c~

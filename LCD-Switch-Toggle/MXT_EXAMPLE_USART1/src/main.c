@@ -85,6 +85,9 @@
  */
 
 #include <asf.h>
+#include "tfont.h"
+#include "calibri_24.h"
+#include "maquina1.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -92,12 +95,20 @@
 #include "conf_example.h"
 #include "conf_uart_serial.h"
 
- typedef struct {
-	 const uint8_t *data;
-	 uint16_t width;
-	 uint16_t height;
-	 uint8_t dataSize;
- } tImage;
+// typedef struct {
+//	 const uint8_t *data;
+//	 uint16_t width;
+//	 uint16_t height;
+//	 uint8_t dataSize;
+// } tImage;
+ 
+ #define YEAR        2018
+ #define MOUNTH      3
+ #define DAY         19
+ #define WEEK        12
+ #define HOUR        15
+ #define MINUTE      45
+ #define SECOND      0
  
  
 typedef struct {
@@ -115,6 +126,9 @@ typedef struct {
 #include "icones/unlock_white.h"
 #include "icones/lock_grey.h"
 #include "icones/unlock_grey.h"
+#include "icones/fast.h"
+#include "icones/slow.h"
+#include "icones/start.h"
 
 #define MAX_ENTRIES        3
 #define STRING_LENGTH     70
@@ -122,16 +136,33 @@ typedef struct {
 #define USART_TX_MAX_LENGTH     0xff
 
 struct ili9488_opt_t g_ili9488_display_opt;
-const uint32_t BUTTON_W = 120;
-const uint32_t BUTTON_H = 150;
-const uint32_t BUTTON_BORDER = 2;
-const uint32_t BUTTON_X = ILI9488_LCD_WIDTH/2;
-const uint32_t BUTTON_Y = ILI9488_LCD_HEIGHT/2;
-const uint32_t BUTTON_LOCK_X = 220;
-const uint32_t BUTTON_LOCK_SIZE = 93;
 
-struct ili9488_opt_t g_ili9488_display_opt;
 
+//###############################################################################################################
+//VARIAVEIS GLOBAIS
+volatile uint8_t locked = 1;
+volatile uint8_t wash_mode = 0;
+volatile uint8_t isWashing = 0;
+volatile uint32_t minute = 0;
+volatile uint32_t second = 0;
+
+//###############################################################################################################
+//CONFIGURE E OUTROS
+
+//DESENHA A FONTE EM TEXTO NA TELA
+void font_draw_text(tFont *font, const char *text, int x, int y, int spacing) {
+	char *p = text;
+	while(*p != NULL) {
+		char letter = *p;
+		int letter_offset = letter - font->start_char;
+		if(letter <= font->end_char) {
+			tChar *current_char = font->chars + letter_offset;
+			ili9488_draw_pixmap(x, y, current_char->image->width, current_char->image->height, current_char->image->data);
+			x += current_char->image->width + spacing;
+		}
+		p++;
+	}
+}
 
 static void configure_lcd(void){
 	/* Initialize display parameter */
@@ -143,6 +174,7 @@ static void configure_lcd(void){
 	/* Initialize LCD */
 	ili9488_init(&g_ili9488_display_opt);
 }
+
 
 /**
  * \brief Set maXTouch configuration
@@ -237,41 +269,97 @@ static void mxt_init(struct mxt_device *device)
 			+ MXT_GEN_COMMANDPROCESSOR_CALIBRATE, 0x01);
 }
 
+//###############################################################################################################
+//DRAWS
+
+//DESENHA A TELA BRANCA DE FUNDO
 void draw_screen(void) {
 	ili9488_set_foreground_color(COLOR_CONVERT(COLOR_WHITE));
 	ili9488_draw_filled_rectangle(0, 0, ILI9488_LCD_WIDTH-1, ILI9488_LCD_HEIGHT-1);
 }
 
-void draw_button(uint32_t clicked) {
-	static uint32_t last_state = 255; // undefined
-	if(clicked == last_state) return;
-	
-	ili9488_set_foreground_color(COLOR_CONVERT(COLOR_BLACK));
-	ili9488_draw_filled_rectangle(BUTTON_X-BUTTON_W/2, BUTTON_Y-BUTTON_H/2, BUTTON_X+BUTTON_W/2, BUTTON_Y+BUTTON_H/2);
-	if(clicked) {
-		ili9488_set_foreground_color(COLOR_CONVERT(COLOR_TOMATO));
-		ili9488_draw_filled_rectangle(BUTTON_X-BUTTON_W/2+BUTTON_BORDER, BUTTON_Y+BUTTON_BORDER, BUTTON_X+BUTTON_W/2-BUTTON_BORDER, BUTTON_Y+BUTTON_H/2-BUTTON_BORDER);
-	} else {
-		ili9488_set_foreground_color(COLOR_CONVERT(COLOR_GREEN));
-		ili9488_draw_filled_rectangle(BUTTON_X-BUTTON_W/2+BUTTON_BORDER, BUTTON_Y-BUTTON_H/2+BUTTON_BORDER, BUTTON_X+BUTTON_W/2-BUTTON_BORDER, BUTTON_Y-BUTTON_BORDER);
-	}
-	last_state = clicked;
+//PINTA QUADRADO BRANCO SEM O LOCK
+void draw_lockscreen(void) {
+	ili9488_set_foreground_color(COLOR_CONVERT(COLOR_WHITE));
+	ili9488_draw_filled_rectangle(93, 0, ILI9488_LCD_WIDTH-1, 93);
+	ili9488_draw_filled_rectangle(0, 94, ILI9488_LCD_WIDTH-1, ILI9488_LCD_HEIGHT-1);
 }
 
+//TROCA O ICON DO BUTTON DESENHADO
 void draw_icon_button(button b) {
-	if(b.state) {
+	//printf("%d", b.state);
+	if(b.state == 2) {
 		ili9488_draw_pixmap(b.x0, b.y0, b.icon2.width, b.icon2.height, b.icon2.data);
-	} else {
+	} else if(b.state == 1){
 		ili9488_draw_pixmap(b.x0, b.y0, b.icon1.width, b.icon1.height, b.icon1.data);
 	}
 }
 
-void draw_buttons(button b[], int size){
-	for (int i = 0; i < size; i++){
-		draw_icon_button(b[i]);
+//DESENHA DE ACORDO COM STRUCT
+void draw_wash_mode(t_ciclo cicles[] ,uint8_t mode) {
+	
+	if (mode >= 0){
+		
+		char nome[32];
+		char enxagueTempo[32];
+		char enxagueQnt[32];
+		char centrifugacaoRPM[32];
+		char centrifugacaoTempo[32];
+		
+		sprintf(nome,"%s",cicles[mode].nome);
+		font_draw_text(&calibri_24, nome, 20, 100, 1);
+		
+		sprintf(enxagueTempo,"%d",cicles[mode].enxagueTempo);
+		font_draw_text(&calibri_24, enxagueTempo, 20, 130, 1);
+		
+		sprintf(enxagueQnt,"%d",cicles[mode].enxagueQnt);
+		font_draw_text(&calibri_24, enxagueQnt, 20, 155, 1);
+		
+		sprintf(centrifugacaoRPM,"%d",cicles[mode].centrifugacaoRPM);
+		font_draw_text(&calibri_24, centrifugacaoRPM, 20, 185, 1);
+		
+		sprintf(centrifugacaoTempo,"%d",cicles[mode].centrifugacaoTempo);
+		font_draw_text(&calibri_24, centrifugacaoTempo, 20, 210, 1);
 	}
 }
 
+//DESENHA O BOTÃO DA LISTA
+void draw_buttons(button b[], int size){
+	for (int i = 0; i < size; i++){
+		draw_icon_button(b[i]);
+	}	
+}
+
+//DESENHA O TIMER
+void draw_timer(){
+	char min[32];
+	char sec[32];
+	
+	sprintf(min,"%d: ",minute);
+	font_draw_text(&calibri_24, min, 0, ILI9488_LCD_HEIGHT - 186, 1);
+	
+	sprintf(sec,"%d",second);
+	font_draw_text(&calibri_24, sec, 20, ILI9488_LCD_HEIGHT - 186, 1);
+}
+
+//DESENHA O DISPLAY GERAL
+void draw_display(button b[], int size, t_ciclo cicles[] ,uint8_t mode) {
+	if(locked){
+		draw_lockscreen();
+		draw_icon_button(b[0]);
+	}
+	else if (isWashing){
+		
+		draw_timer(minute,second);
+	}
+	else{
+		draw_buttons(b,size);
+		draw_wash_mode(cicles,mode);
+	}
+}
+
+//###############################################################################################################
+//CONVERTS
 uint32_t convert_axis_system_x(uint32_t touch_y) {
 	// entrada: 4096 - 0 (sistema de coordenadas atual)
 	// saida: 0 - 320
@@ -284,15 +372,48 @@ uint32_t convert_axis_system_y(uint32_t touch_x) {
 	return ILI9488_LCD_HEIGHT*touch_x/4096;
 }
 
-void update_screen(uint32_t tx, uint32_t ty) {
-		
-	if(tx >= BUTTON_X-BUTTON_W/2 && tx <= BUTTON_X + BUTTON_W/2) {
-		if(ty >= BUTTON_Y-BUTTON_H/2 && ty <= BUTTON_Y) {
-			draw_button(0);
-		} else if(ty > BUTTON_Y && ty < BUTTON_Y + BUTTON_H/2) {
-			draw_button(1);
+//###############################################################################################################
+//HANDLERS
+/**
+* \brief Interrupt handler for the RTC. Refresh the display.
+*/
+void RTC_Handler(void)
+{
+	uint32_t ul_status = rtc_get_status(RTC);
+	uint32_t hour;
+	uint32_t minute ;
+	uint32_t second ;
+
+
+	
+	//INTERRUPÇÃO POR SEGUNDO
+	if ((ul_status & RTC_SR_SEC) == RTC_SR_SEC) {
+		rtc_clear_status(RTC, RTC_SCCR_SECCLR);
+		//MUDA AS VARIAVEIS DE ACORDO COM O TEMPO
+		if (second == 0){
+			minute--;
+			second = 59;
+		}else{
+			second--;
 		}
+		
 	}
+	
+	//INTERRUPÇÃO POR ALARME
+	if ((ul_status & RTC_SR_ALARM) == RTC_SR_ALARM) {
+			 	rtc_get_time(RTC,&hour,&minute,&second);
+			 	rtc_set_time_alarm(RTC, 1, HOUR, 1, MINUTE + minute, 1, SECOND);
+
+			rtc_clear_status(RTC, RTC_SCCR_ALRCLR);
+			isWashing = !isWashing;
+			
+	}
+	
+	rtc_clear_status(RTC, RTC_SCCR_ACKCLR);
+	rtc_clear_status(RTC, RTC_SCCR_TIMCLR);
+	rtc_clear_status(RTC, RTC_SCCR_CALCLR);
+	rtc_clear_status(RTC, RTC_SCCR_TDERRCLR);
+	
 }
 
 int mxt_handler(struct mxt_device *device, uint16_t *x, uint16_t *y)
@@ -346,9 +467,68 @@ int mxt_handler(struct mxt_device *device, uint16_t *x, uint16_t *y)
 	return(found);
 }
 
+//###############################################################################################################
 
-void callback_lock(button b){
-	b.state = b.state == 1 ? 2 : 1;
+
+//###############################################################################################################
+//CALL BACKS
+void callback_lock(button *b){
+	printf("\nCALLBACK DO LOCK");
+	b->state = b->state == 1 ? 2 : 1;
+	locked = !locked;	
+}
+
+void callback_wash_buttons(button *b, uint8_t index){
+	b->state = b->state == 1 ? 2 : 1;
+	wash_mode = index-2;
+}
+
+void callback_fast_wash(button *b){
+	b->state = b->state == 1 ? 2 : 1;
+}
+
+void callback_start(button *b, uint8_t index,t_ciclo cicles[]){
+	b->state = b->state == 1 ? 2 : 1;
+	//CALCULA O TEMPO EM MINUTOS DO CICLO ESCOLHIDO
+	minute = wash_time(cicles, wash_mode);
+	//SETA A FLAG DE LAVANDO
+	isWashing = 1;
+}
+
+//###############################################################################################################
+//FUNÇÕES
+void RTC_init(){
+	/* Configura o PMC */
+	pmc_enable_periph_clk(ID_RTC);
+
+	/* Default RTC configuration, 24-hour mode */
+	rtc_set_hour_mode(RTC, 0);
+
+	/* Configura data e hora manualmente */
+	rtc_set_date(RTC, YEAR, MOUNTH, DAY, WEEK);
+	rtc_set_time(RTC, HOUR, MINUTE, SECOND);
+
+	/* Configure RTC interrupts */
+	NVIC_DisableIRQ(RTC_IRQn);
+	NVIC_ClearPendingIRQ(RTC_IRQn);
+	NVIC_SetPriority(RTC_IRQn, 0);
+	NVIC_EnableIRQ(RTC_IRQn);
+
+	/* Ativa interrupcao via alarme */
+	rtc_enable_interrupt(RTC,  RTC_IER_ALREN);
+	rtc_enable_interrupt(RTC,  RTC_IER_SECEN);
+
+}
+
+//CALCULA O TEMPO DE LAVAGEM DO CICLO
+int wash_time(t_ciclo cicles[], uint8_t mode){
+	int t = cicles[mode].enxagueTempo * cicles[mode].enxagueQnt + cicles[mode].centrifugacaoTempo;
+	
+	if (cicles[mode].heavy){
+		t = t*1.2;
+	}
+	
+	return t;
 }
 
 int isPressed(button b, uint16_t x, uint16_t y){
@@ -365,24 +545,31 @@ int isPressed(button b, uint16_t x, uint16_t y){
 int touch_buttons(button b[],uint8_t size , uint16_t xTouch, uint16_t yTouch){
 	for(int i = 0; i < size; i++){
 		if(isPressed(b[i], xTouch, yTouch)){
+			printf("Botao pressionado");
 			return i;
 		}
 	}
 }
 
-int main(void)
-{
+//###############################################################################################################
+
+int main(void){
 	
-	button b_lock = {.x0 = 0, .y0 = 0, .state = 0, .icon1 = lock_white, .icon2 = unlock_white, .callback = callback_lock};
-	//button b_wash = {.x0 = 0, .y0 = 0, .state = 0, .icon1 = wash, .icon2 = wash, .callback = callback_wasg};
+	button b_lock =	 {.x0 = 0, .y0 = 0, .state = 1, .icon1 = lock_white, .icon2 = unlock_white, .callback = callback_lock};
+	button b_centrifuga = {.x0 = 186, .y0 = ILI9488_LCD_HEIGHT - 186, .state = 1, .icon1 = fast, .icon2 = unlock_grey, .callback = callback_wash_buttons};
+	button b_fast = {.x0 = 93, .y0 = ILI9488_LCD_HEIGHT - 186, .state = 1, .icon1 = fast, .icon2 = unlock_grey, .callback = callback_wash_buttons};
+	button b_slow = {.x0 = 0, .y0 = ILI9488_LCD_HEIGHT - 186, .state = 1, .icon1 = slow, .icon2 = unlock_grey, .callback = callback_wash_buttons};
+	button b_daily = {.x0 = 0, .y0 = ILI9488_LCD_HEIGHT - 93, .state = 1, .icon1 = slow, .icon2 = unlock_grey, .callback = callback_wash_buttons};
+	button b_enxague = {.x0 = 186, .y0 = ILI9488_LCD_HEIGHT - 93, .state = 1, .icon1 = slow, .icon2 = unlock_grey, .callback = callback_wash_buttons};
+	button b_start = {.x0 = ILI9488_LCD_WIDTH - 93, .y0 = 0, .state = 1, .icon1 = wash, .icon2 = unlock_grey, .callback = callback_start};
 	
-	uint8_t size = 1;
-	button buttons[] = {b_lock};
-	
-	
+	uint8_t size = 7;
+	button buttons[] = {b_lock, b_start, b_fast, b_centrifuga, b_slow, b_enxague, b_daily};	
 	
 	struct mxt_device device; /* Device data container */
 
+	t_ciclo cicles[] = {c_rapido, c_centrifuga,c_pesado, c_enxague,c_diario};
+	
 	/* Initialize the USART configuration struct */
 	const usart_serial_options_t usart_serial_options = {
 		.baudrate     = USART_SERIAL_EXAMPLE_BAUDRATE,
@@ -392,33 +579,37 @@ int main(void)
 	};
 
 	sysclk_init(); /* Initialize system clocks */
+	WDT->WDT_MR = WDT_MR_WDDIS;
 	board_init();  /* Initialize board */
 	configure_lcd();
 	draw_screen();
-	draw_button(0);
+	
+	/** Configura RTC */
+	RTC_init();
 	/* Initialize the mXT touch device */
 	mxt_init(&device);
+	
 	
 	/* Initialize stdio on USART */
 	stdio_serial_init(USART_SERIAL_EXAMPLE, &usart_serial_options);
 
 	printf("\n\rmaXTouch data USART transmitter\n\r");
 		
-	
 
 	while (true) {
 		/* Check for any pending messages and run message handler if any
 		 * message is found in the queue */
 		uint16_t x,y;
-		
-		draw_buttons(buttons, size);
+	
+		draw_display(buttons, size, cicles, wash_mode);
 		
 		if (mxt_is_message_pending(&device)) {
 			uint8_t found = mxt_handler(&device, &x, &y);
 			if(found){
 				uint index = touch_buttons(buttons, size, x, y);
-				buttons[index].callback();
+				buttons[index].callback(&buttons[index], index, cicles);
 			}
+		
 		}
 		
 	}
