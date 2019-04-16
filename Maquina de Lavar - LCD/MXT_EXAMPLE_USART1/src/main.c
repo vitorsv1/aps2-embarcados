@@ -336,10 +336,10 @@ void draw_timer(){
 	char sec[32];
 	
 	sprintf(min,"%d: ",minute);
-	font_draw_text(&calibri_24, min, 0, ILI9488_LCD_HEIGHT - 186, 1);
+	font_draw_text(&calibri_24, min, ILI9488_LCD_WIDTH/2, ILI9488_LCD_HEIGHT - 186, 1);
 	
 	sprintf(sec,"%d",second);
-	font_draw_text(&calibri_24, sec, 20, ILI9488_LCD_HEIGHT - 186, 1);
+	font_draw_text(&calibri_24, sec,(ILI9488_LCD_WIDTH/2 + 40), ILI9488_LCD_HEIGHT - 186, 1);
 }
 
 //DESENHA O DISPLAY GERAL
@@ -489,8 +489,6 @@ void callback_fast_wash(button *b){
 
 void callback_start(button *b, uint8_t index,t_ciclo cicles[]){
 	b->state = b->state == 1 ? 2 : 1;
-	//CALCULA O TEMPO EM MINUTOS DO CICLO ESCOLHIDO
-	minute = wash_time(cicles, wash_mode);
 	//SETA A FLAG DE LAVANDO
 	isWashing = 1;
 }
@@ -608,6 +606,8 @@ int main(void){
 			if(found){
 				uint index = touch_buttons(buttons, size, x, y);
 				buttons[index].callback(&buttons[index], index, cicles);
+				//CALCULA O TEMPO EM MINUTOS DO CICLO ESCOLHIDO
+				minute = wash_time(cicles, wash_mode);
 			}
 		
 		}
