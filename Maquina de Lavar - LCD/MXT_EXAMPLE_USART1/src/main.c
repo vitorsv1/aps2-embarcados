@@ -84,42 +84,16 @@
  * Support and FAQ: visit <a href="https://www.microchip.com/support/">Microchip Support</a>
  */
 
+//############################################################################################################
+// INCLUDES
+
 #include <asf.h>
 #include "tfont.h"
 #include "calibri_24.h"
 #include "maquina1.h"
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
 #include "conf_board.h"
 #include "conf_example.h"
 #include "conf_uart_serial.h"
-
-// typedef struct {
-//	 const uint8_t *data;
-//	 uint16_t width;
-//	 uint16_t height;
-//	 uint8_t dataSize;
-// } tImage;
- 
- #define YEAR        2018
- #define MOUNTH      3
- #define DAY         19
- #define WEEK        12
- #define HOUR        15
- #define MINUTE      45
- #define SECOND      0
- 
- 
-typedef struct {
-	uint   state;
-	tImage icon1;
-	tImage icon2;
-	uint16_t x0;
-	uint16_t y0;
-	void (*callback)();
-} button;
-
 #include "logo.h"
 #include "icones/wash.h"
 #include "icones/lock_white.h"
@@ -130,24 +104,50 @@ typedef struct {
 #include "icones/slow.h"
 #include "icones/start.h"
 
+//############################################################################################################
+// DEFINES
+
+#define YEAR        2018
+#define MOUNTH      3
+#define DAY         19
+#define WEEK        12
+#define HOUR        15
+#define MINUTE      45
+#define SECOND      0
+
 #define MAX_ENTRIES        3
 #define STRING_LENGTH     70
-
 #define USART_TX_MAX_LENGTH     0xff
 
-struct ili9488_opt_t g_ili9488_display_opt;
+#define LED_PIO_ID	   ID_PIOC
+#define LED_PIO        PIOC
+#define LED_PIN		   8
+#define LED_PIN_MASK   (1<<LED_PIN)
 
+//############################################################################################################
+// STRUCTS
+typedef struct {
+	uint   state;
+	tImage icon1;
+	tImage icon2;
+	uint16_t x0;
+	uint16_t y0;
+	void (*callback)();
+} button;
+
+struct ili9488_opt_t g_ili9488_display_opt;
 
 //###############################################################################################################
 //VARIAVEIS GLOBAIS
 volatile uint8_t locked = 1;
 volatile uint8_t wash_mode = 0;
+volatile uint8_t cleanScreen = 0;
 volatile uint8_t isWashing = 0;
 volatile uint32_t minute = 0;
 volatile uint32_t second = 0;
 
 //###############################################################################################################
-//CONFIGURE E OUTROS
+//CONFIGURAR E ETC
 
 //DESENHA A FONTE EM TEXTO NA TELA
 void font_draw_text(tFont *font, const char *text, int x, int y, int spacing) {
@@ -174,7 +174,6 @@ static void configure_lcd(void){
 	/* Initialize LCD */
 	ili9488_init(&g_ili9488_display_opt);
 }
-
 
 /**
  * \brief Set maXTouch configuration
@@ -306,19 +305,24 @@ void draw_wash_mode(t_ciclo cicles[] ,uint8_t mode) {
 		char centrifugacaoRPM[32];
 		char centrifugacaoTempo[32];
 		
+		if (cleanScreen){
+			ili9488_set_foreground_color(COLOR_CONVERT(COLOR_WHITE));
+			ili9488_draw_filled_rectangle(20, 100, ILI9488_LCD_WIDTH-1, 235);
+			cleanScreen = 0;
+		}
 		sprintf(nome,"%s",cicles[mode].nome);
 		font_draw_text(&calibri_24, nome, 20, 100, 1);
 		
-		sprintf(enxagueTempo,"%d",cicles[mode].enxagueTempo);
+		sprintf(enxagueTempo,"%d minutos",cicles[mode].enxagueTempo);
 		font_draw_text(&calibri_24, enxagueTempo, 20, 130, 1);
 		
-		sprintf(enxagueQnt,"%d",cicles[mode].enxagueQnt);
+		sprintf(enxagueQnt,"%d enxagues",cicles[mode].enxagueQnt);
 		font_draw_text(&calibri_24, enxagueQnt, 20, 155, 1);
 		
-		sprintf(centrifugacaoRPM,"%d",cicles[mode].centrifugacaoRPM);
+		sprintf(centrifugacaoRPM,"%d RPM",cicles[mode].centrifugacaoRPM);
 		font_draw_text(&calibri_24, centrifugacaoRPM, 20, 185, 1);
 		
-		sprintf(centrifugacaoTempo,"%d",cicles[mode].centrifugacaoTempo);
+		sprintf(centrifugacaoTempo,"%d minutos",cicles[mode].centrifugacaoTempo);
 		font_draw_text(&calibri_24, centrifugacaoTempo, 20, 210, 1);
 	}
 }
@@ -336,10 +340,10 @@ void draw_timer(){
 	char sec[32];
 	
 	sprintf(min,"%d: ",minute);
-	font_draw_text(&calibri_24, min, ILI9488_LCD_WIDTH/2, ILI9488_LCD_HEIGHT - 186, 1);
+	font_draw_text(&calibri_24, min, ILI9488_LCD_WIDTH/2 - 30, ILI9488_LCD_HEIGHT - 206, 1);
 	
 	sprintf(sec,"%d",second);
-	font_draw_text(&calibri_24, sec,(ILI9488_LCD_WIDTH/2 + 40), ILI9488_LCD_HEIGHT - 186, 1);
+	font_draw_text(&calibri_24, sec,(ILI9488_LCD_WIDTH/2 + 10), ILI9488_LCD_HEIGHT - 206, 1);
 }
 
 //DESENHA O DISPLAY GERAL
@@ -481,10 +485,12 @@ void callback_lock(button *b){
 void callback_wash_buttons(button *b, uint8_t index){
 	b->state = b->state == 1 ? 2 : 1;
 	wash_mode = index-2;
+	cleanScreen = 1;
 }
 
 void callback_fast_wash(button *b){
 	b->state = b->state == 1 ? 2 : 1;
+	cleanScreen = 1;
 }
 
 void callback_start(button *b, uint8_t index,t_ciclo cicles[]){
@@ -516,6 +522,18 @@ void RTC_init(){
 	rtc_enable_interrupt(RTC,  RTC_IER_ALREN);
 	rtc_enable_interrupt(RTC,  RTC_IER_SECEN);
 
+}
+
+void LED_init(int estado){
+	pmc_enable_periph_clk(LED_PIO_ID);
+	pio_set_output(LED_PIO, LED_PIN_MASK, estado, 0, 0 );
+};
+
+void pin_toggle(Pio *pio, uint32_t mask){
+	if(pio_get_output_data_status(pio, mask))
+	pio_clear(pio, mask);
+	else
+	pio_set(pio,mask);
 }
 
 //CALCULA O TEMPO DE LAVAGEM DO CICLO
@@ -579,6 +597,7 @@ int main(void){
 	sysclk_init(); /* Initialize system clocks */
 	WDT->WDT_MR = WDT_MR_WDDIS;
 	board_init();  /* Initialize board */
+	LED_init(0); // Inicializa LED ligado
 	configure_lcd();
 	draw_screen();
 	
@@ -591,8 +610,9 @@ int main(void){
 	/* Initialize stdio on USART */
 	stdio_serial_init(USART_SERIAL_EXAMPLE, &usart_serial_options);
 
-	printf("\n\rmaXTouch data USART transmitter\n\r");
-		
+	//printf("\n\rmaXTouch data USART transmitter\n\r");
+	
+	
 
 	while (true) {
 		/* Check for any pending messages and run message handler if any

@@ -136,4 +136,8 @@
 // From module: pio_handler support enabled
 #include <pio_handler.h>
 
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+
 #endif // ASF_H
