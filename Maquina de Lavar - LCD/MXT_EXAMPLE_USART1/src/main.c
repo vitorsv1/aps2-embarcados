@@ -95,14 +95,20 @@
 #include "conf_example.h"
 #include "conf_uart_serial.h"
 #include "logo.h"
-#include "icones/wash.h"
+#include "icones/water.h"
+#include "icones/water_click.h"
 #include "icones/lock_white.h"
 #include "icones/unlock_white.h"
-#include "icones/lock_grey.h"
-#include "icones/unlock_grey.h"
 #include "icones/fast.h"
-#include "icones/slow.h"
-#include "icones/start.h"
+#include "icones/fast_click.h"
+#include "icones/clean.h"
+#include "icones/clean_click.h"
+#include "icones/centrifuge.h"
+#include "icones/centrifuge_click.h"
+#include "icones/daily.h"
+#include "icones/daily_click.h"
+#include "icones/heavy.h"
+#include "icones/heavy_click.h"
 
 //############################################################################################################
 // DEFINES
@@ -151,6 +157,7 @@ volatile uint8_t cleanScreen = 0;
 volatile uint8_t isWashing = 0;
 volatile uint32_t minute = 0;
 volatile uint32_t second = 0;
+volatile uint8_t washingLockScreen = 0;
 
 //###############################################################################################################
 //CONFIGURAR E ETC
@@ -356,36 +363,46 @@ void draw_closeDoor(int shouldIDrawTheCloseTheDoorMessage){
 		draw_screen();
 	
 		sprintf(aviso,"%s","FECHAR PORTA!");
-		font_draw_text(&calibri_24, aviso, 95, 2, 1);
+		font_draw_text(&calibri_24, aviso, 110, 100, 1);
 	}
 	else {
-		//ili9488_set_foreground_color(COLOR_CONVERT(COLOR_WHITE));
-		//ili9488_draw_filled_rectangle(93, 0, ILI9488_LCD_WIDTH-1, 93);
+		ili9488_set_foreground_color(COLOR_CONVERT(COLOR_WHITE));
+		ili9488_draw_filled_rectangle(110, 100, ILI9488_LCD_WIDTH-1, 130);
 	}
 }
 
 //DESENHA O TIMER
 void draw_timer(){
+	
 	char tim[32];
+	
+	if (washingLockScreen){
+		draw_lockscreen();	
+		washingLockScreen = 0;
+	}
+	
 		
 	sprintf(tim,"%02d:%02d",minute, second);
-	font_draw_text(&calibri_24, tim, ILI9488_LCD_WIDTH/2 - 30, ILI9488_LCD_HEIGHT - 206, 1);
+	font_draw_text(&calibri_24, tim, ILI9488_LCD_WIDTH/2 - 30, ILI9488_LCD_HEIGHT - 210, 1);
 }
 
 //DESENHA O DISPLAY GERAL
 void draw_display(button b[], int size, t_ciclo cicles[] ,uint8_t mode) {
+	if (isWashing){	
+		draw_timer(minute,second);
+	}
+	else{
+		if(!locked){
+			draw_buttons(b,size);
+			draw_wash_mode(cicles,mode);
+		}
+		
+	}
 	if(locked){
 		draw_lockscreen();
 		draw_icon_button(b[0]);
 	}
-	else if (isWashing){
-		
-		draw_timer(minute,second);
-	}
-	else{
-		draw_buttons(b,size);
-		draw_wash_mode(cicles,mode);
-	}
+	
 }
 
 //###############################################################################################################
@@ -419,6 +436,8 @@ void RTC_Handler(void)
 {
 	uint32_t ul_status = rtc_get_status(RTC);
 	uint16_t hour;
+	uint16_t m;
+	uint16_t se;
 	//INTERRUPÇÃO POR SEGUNDO
 	if ((ul_status & RTC_SR_SEC) == RTC_SR_SEC) {
 		rtc_clear_status(RTC, RTC_SCCR_SECCLR);
@@ -434,11 +453,11 @@ void RTC_Handler(void)
 	
 	//INTERRUPÇÃO POR ALARME
 	if ((ul_status & RTC_SR_ALARM) == RTC_SR_ALARM) {
-			 	rtc_get_time(RTC,&hour,&minute,&second);
-			 	rtc_set_time_alarm(RTC, 1, HOUR, 1, MINUTE + minute, 1, SECOND);
+			rtc_get_time(RTC,&hour,&m,&se);
+			rtc_set_time_alarm(RTC, 1, hour, 1, m+minute, 1, se+second);
 
 			rtc_clear_status(RTC, RTC_SCCR_ALRCLR);
-			isWashing = !isWashing;
+			isWashing = 0;
 			
 	}
 	
@@ -537,6 +556,7 @@ void callback_start(button *b, uint8_t index){
 	if (flag_led){
 		//SETA A FLAG DE LAVANDO
 		isWashing = 1;	
+		washingLockScreen = 1;
 		draw_closeDoor(0);
 	}else{
 		draw_closeDoor(1);
@@ -630,12 +650,12 @@ int touch_buttons(button b[],uint8_t size , uint16_t xTouch, uint16_t yTouch){
 int main(void){
 	
 	button b_lock =	 {.x0 = 0, .y0 = 0, .state = 1, .icon1 = lock_white, .icon2 = unlock_white, .callback = callback_lock};
-	button b_centrifuga = {.x0 = 186, .y0 = ILI9488_LCD_HEIGHT - 186, .state = 1, .icon1 = fast, .icon2 = unlock_grey, .callback = callback_wash_buttons};
-	button b_fast = {.x0 = 93, .y0 = ILI9488_LCD_HEIGHT - 186, .state = 1, .icon1 = fast, .icon2 = unlock_grey, .callback = callback_wash_buttons};
-	button b_slow = {.x0 = 0, .y0 = ILI9488_LCD_HEIGHT - 186, .state = 1, .icon1 = slow, .icon2 = unlock_grey, .callback = callback_wash_buttons};
-	button b_daily = {.x0 = 0, .y0 = ILI9488_LCD_HEIGHT - 93, .state = 1, .icon1 = slow, .icon2 = unlock_grey, .callback = callback_wash_buttons};
-	button b_enxague = {.x0 = 186, .y0 = ILI9488_LCD_HEIGHT - 93, .state = 1, .icon1 = slow, .icon2 = unlock_grey, .callback = callback_wash_buttons};
-	button b_start = {.x0 = 320 - 93, .y0 = 0, .state = 1, .icon1 = wash, .icon2 = unlock_grey, .callback = callback_start};
+	button b_centrifuga = {.x0 = ILI9488_LCD_WIDTH - 93, .y0 = ILI9488_LCD_HEIGHT - 195, .state = 1, .icon1 = centrifuge, .icon2 = centrifuge_click, .callback = callback_wash_buttons};
+	button b_fast = {.x0 = 110, .y0 = ILI9488_LCD_HEIGHT - 195, .state = 1, .icon1 = fast, .icon2 = fast_click, .callback = callback_wash_buttons};
+	button b_slow = {.x0 = 0, .y0 = ILI9488_LCD_HEIGHT - 195, .state = 1, .icon1 = heavy, .icon2 = heavy_click, .callback = callback_wash_buttons};
+	button b_daily = {.x0 = 45, .y0 = ILI9488_LCD_HEIGHT - 98, .state = 1, .icon1 = daily, .icon2 = daily_click, .callback = callback_wash_buttons};
+	button b_enxague = {.x0 = ILI9488_LCD_WIDTH - 138, .y0 = ILI9488_LCD_HEIGHT - 98, .state = 1, .icon1 = water, .icon2 = water_click, .callback = callback_wash_buttons};
+	button b_start = {.x0 = 320 - 93, .y0 = 0, .state = 1, .icon1 = clean, .icon2 = clean_click, .callback = callback_start};
 	
 	uint8_t size = 7;
 	button buttons[] = {b_lock, b_start, b_fast, b_centrifuga, b_slow, b_enxague, b_daily};	
@@ -655,7 +675,7 @@ int main(void){
 	sysclk_init(); /* Initialize system clocks */
 	WDT->WDT_MR = WDT_MR_WDDIS;
 	board_init();  /* Initialize board */
-	LED_init(1); // Inicializa LED ligado
+	LED_init(0); // Inicializa LED ligado
 	BUT_init();
 	configure_lcd();
 	draw_screen();

@@ -716,7 +716,55 @@
     <Compile Include="src\calibri_24.h">
       <SubType>compile</SubType>
     </Compile>
-    <Compile Include="src\icones\start.h">
+    <Compile Include="src\icones\centrifuge.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="src\icones\centrifuge_click.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="src\icones\clean.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="src\icones\clean_click.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="src\icones\daily.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="src\icones\daily_click.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="src\icones\fast.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="src\icones\fast_click.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="src\icones\heavy.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="src\icones\heavy_click.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="src\icones\lock_white.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="src\icones\unlock_grey.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="src\icones\unlock_white.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="src\icones\wash.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="src\icones\water.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="src\icones\water_click.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="src\logo.h">
       <SubType>compile</SubType>
     </Compile>
     <Compile Include="src\maquina1.h">
@@ -1382,24 +1430,6 @@
     <None Include="src\config\conf_ili9488.h">
       <SubType>compile</SubType>
     </None>
-    <Compile Include="src\icones\bloqueio.h">
-      <SubType>compile</SubType>
-    </Compile>
-    <Compile Include="src\icones\lavagem.h">
-      <SubType>compile</SubType>
-    </Compile>
-    <Compile Include="src\icones\lock-grey.h">
-      <SubType>compile</SubType>
-    </Compile>
-    <Compile Include="src\icones\lock.h">
-      <SubType>compile</SubType>
-    </Compile>
-    <Compile Include="src\icones\unlock-grey.h">
-      <SubType>compile</SubType>
-    </Compile>
-    <Compile Include="src\icones\unlock.h">
-      <SubType>compile</SubType>
-    </Compile>
     <Compile Include="src\main.c">
       <SubType>compile</SubType>
     </Compile>
