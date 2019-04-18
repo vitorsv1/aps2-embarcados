@@ -12,3 +12,7 @@ Uma interface para uma máquina de lavar roupa.
 
 ## Descrição:
 O marketing de uma empresa de linha branca decidiu modernizar a interface de uma de suas máquinas de lavar roupas. Vocês serão os responsáveis pela criação desse protótipo. Para isso será necessário interpretar os requisitos de marketing e de engenharia para criar uma interface que satisfaz as duas pontas.
+
+## Créditos:
+Icones retirados da plataforma  Freepik Company S.L.
+- https://www.flaticon.com
