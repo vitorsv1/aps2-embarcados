@@ -6,7 +6,7 @@
 
 ## Atividade Supervisionada 2
 
-## Data: Até 12/4
+## Data: Até 19/4
 
 Uma interface para uma máquina de lavar roupa.
 
