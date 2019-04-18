@@ -107,12 +107,12 @@
 //############################################################################################################
 // DEFINES
 
-#define YEAR        2018
-#define MOUNTH      3
-#define DAY         19
-#define WEEK        12
-#define HOUR        15
-#define MINUTE      45
+#define YEAR        0
+#define MOUNTH      0
+#define DAY         0
+#define WEEK        0
+#define HOUR        0
+#define MINUTE      0
 #define SECOND      0
 
 #define MAX_ENTRIES        3
@@ -123,6 +123,11 @@
 #define LED_PIO        PIOC
 #define LED_PIN		   8
 #define LED_PIN_MASK   (1<<LED_PIN)
+
+#define BUT_PIO_ID	   ID_PIOA
+#define BUT_PIO        PIOA
+#define BUT_PIN		   11
+#define BUT_PIN_MASK   (1<<BUT_PIN)
 
 //############################################################################################################
 // STRUCTS
@@ -140,6 +145,7 @@ struct ili9488_opt_t g_ili9488_display_opt;
 //###############################################################################################################
 //VARIAVEIS GLOBAIS
 volatile uint8_t locked = 1;
+volatile uint8_t flag_led = 0;
 volatile uint8_t wash_mode = 0;
 volatile uint8_t cleanScreen = 0;
 volatile uint8_t isWashing = 0;
@@ -268,6 +274,14 @@ static void mxt_init(struct mxt_device *device)
 			+ MXT_GEN_COMMANDPROCESSOR_CALIBRATE, 0x01);
 }
 
+//MUDA O VALOR NO PINO
+void pin_toggle(Pio *pio, uint32_t mask){
+	if(pio_get_output_data_status(pio, mask))
+	pio_clear(pio, mask);
+	else
+	pio_set(pio,mask);
+}
+
 //###############################################################################################################
 //DRAWS
 
@@ -334,16 +348,28 @@ void draw_buttons(button b[], int size){
 	}	
 }
 
+//DESENHA A MENSAGEM DE FECHAR A PORTA
+void draw_closeDoor(int shouldIDrawTheCloseTheDoorMessage){
+	char aviso[32];
+	
+	if (shouldIDrawTheCloseTheDoorMessage) {
+		draw_screen();
+	
+		sprintf(aviso,"%s","FECHAR PORTA!");
+		font_draw_text(&calibri_24, aviso, 95, 2, 1);
+	}
+	else {
+		//ili9488_set_foreground_color(COLOR_CONVERT(COLOR_WHITE));
+		//ili9488_draw_filled_rectangle(93, 0, ILI9488_LCD_WIDTH-1, 93);
+	}
+}
+
 //DESENHA O TIMER
 void draw_timer(){
-	char min[32];
-	char sec[32];
-	
-	sprintf(min,"%d: ",minute);
-	font_draw_text(&calibri_24, min, ILI9488_LCD_WIDTH/2 - 30, ILI9488_LCD_HEIGHT - 206, 1);
-	
-	sprintf(sec,"%d",second);
-	font_draw_text(&calibri_24, sec,(ILI9488_LCD_WIDTH/2 + 10), ILI9488_LCD_HEIGHT - 206, 1);
+	char tim[32];
+		
+	sprintf(tim,"%02d:%02d",minute, second);
+	font_draw_text(&calibri_24, tim, ILI9488_LCD_WIDTH/2 - 30, ILI9488_LCD_HEIGHT - 206, 1);
 }
 
 //DESENHA O DISPLAY GERAL
@@ -379,17 +405,20 @@ uint32_t convert_axis_system_y(uint32_t touch_x) {
 //###############################################################################################################
 //HANDLERS
 /**
+*  Handle Interrupcao botao 1
+*/
+static void Button1_Handler(uint32_t id, uint32_t mask){
+	flag_led = !flag_led;
+	pin_toggle(LED_PIO, LED_PIN_MASK);
+}
+
+/**
 * \brief Interrupt handler for the RTC. Refresh the display.
 */
 void RTC_Handler(void)
 {
 	uint32_t ul_status = rtc_get_status(RTC);
-	uint32_t hour;
-	uint32_t minute ;
-	uint32_t second ;
-
-
-	
+	uint16_t hour;
 	//INTERRUPÇÃO POR SEGUNDO
 	if ((ul_status & RTC_SR_SEC) == RTC_SR_SEC) {
 		rtc_clear_status(RTC, RTC_SCCR_SECCLR);
@@ -444,7 +473,12 @@ int mxt_handler(struct mxt_device *device, uint16_t *x, uint16_t *y)
 		 // eixos trocados (quando na vertical LCD)
 		uint32_t conv_x = convert_axis_system_x(touch_event.y);
 		uint32_t conv_y = convert_axis_system_y(touch_event.x);
-		found = 1;
+		
+		//printf("%d", conv_x);
+		//printf("%d", conv_y);
+		
+		if (touch_event.status == 192)
+			found = 1;
 		
 		*x = conv_x;
 		*y = conv_y;
@@ -480,27 +514,57 @@ void callback_lock(button *b){
 	printf("\nCALLBACK DO LOCK");
 	b->state = b->state == 1 ? 2 : 1;
 	locked = !locked;	
+	isWashing = 0;
 }
 
 void callback_wash_buttons(button *b, uint8_t index){
 	b->state = b->state == 1 ? 2 : 1;
 	wash_mode = index-2;
 	cleanScreen = 1;
+	isWashing = 0;
 }
 
 void callback_fast_wash(button *b){
 	b->state = b->state == 1 ? 2 : 1;
 	cleanScreen = 1;
+	isWashing = 0;
 }
 
-void callback_start(button *b, uint8_t index,t_ciclo cicles[]){
+void callback_start(button *b, uint8_t index){
 	b->state = b->state == 1 ? 2 : 1;
-	//SETA A FLAG DE LAVANDO
-	isWashing = 1;
+	
+	
+	if (flag_led){
+		//SETA A FLAG DE LAVANDO
+		isWashing = 1;	
+		draw_closeDoor(0);
+	}else{
+		draw_closeDoor(1);
+	}
+	
 }
 
 //###############################################################################################################
 //FUNÇÕES
+
+void BUT_init(void){
+	/* config. pino botao em modo de entrada */
+	pmc_enable_periph_clk(BUT_PIO_ID);
+	pio_set_input(BUT_PIO, BUT_PIN_MASK, PIO_PULLUP | PIO_DEBOUNCE);
+
+	/* config. interrupcao em borda de descida no botao do kit */
+	/* indica funcao (but_Handler) a ser chamada quando houver uma interrup??o */
+	pio_enable_interrupt(BUT_PIO, BUT_PIN_MASK);
+	pio_handler_set(BUT_PIO, BUT_PIO_ID, BUT_PIN_MASK, PIO_IT_FALL_EDGE, Button1_Handler);
+
+	/* habilita interrup?c?o do PIO que controla o botao */
+	/* e configura sua prioridade                        */
+	NVIC_EnableIRQ(BUT_PIO_ID);
+	NVIC_SetPriority(BUT_PIO_ID, 1);
+	
+	pio_handler_set(BUT_PIO, BUT_PIO_ID, BUT_PIN_MASK, PIO_IT_FALL_EDGE, Button1_Handler);
+}
+
 void RTC_init(){
 	/* Configura o PMC */
 	pmc_enable_periph_clk(ID_RTC);
@@ -528,13 +592,6 @@ void LED_init(int estado){
 	pmc_enable_periph_clk(LED_PIO_ID);
 	pio_set_output(LED_PIO, LED_PIN_MASK, estado, 0, 0 );
 };
-
-void pin_toggle(Pio *pio, uint32_t mask){
-	if(pio_get_output_data_status(pio, mask))
-	pio_clear(pio, mask);
-	else
-	pio_set(pio,mask);
-}
 
 //CALCULA O TEMPO DE LAVAGEM DO CICLO
 int wash_time(t_ciclo cicles[], uint8_t mode){
@@ -565,6 +622,7 @@ int touch_buttons(button b[],uint8_t size , uint16_t xTouch, uint16_t yTouch){
 			return i;
 		}
 	}
+	return size + 1;
 }
 
 //###############################################################################################################
@@ -577,7 +635,7 @@ int main(void){
 	button b_slow = {.x0 = 0, .y0 = ILI9488_LCD_HEIGHT - 186, .state = 1, .icon1 = slow, .icon2 = unlock_grey, .callback = callback_wash_buttons};
 	button b_daily = {.x0 = 0, .y0 = ILI9488_LCD_HEIGHT - 93, .state = 1, .icon1 = slow, .icon2 = unlock_grey, .callback = callback_wash_buttons};
 	button b_enxague = {.x0 = 186, .y0 = ILI9488_LCD_HEIGHT - 93, .state = 1, .icon1 = slow, .icon2 = unlock_grey, .callback = callback_wash_buttons};
-	button b_start = {.x0 = ILI9488_LCD_WIDTH - 93, .y0 = 0, .state = 1, .icon1 = wash, .icon2 = unlock_grey, .callback = callback_start};
+	button b_start = {.x0 = 320 - 93, .y0 = 0, .state = 1, .icon1 = wash, .icon2 = unlock_grey, .callback = callback_start};
 	
 	uint8_t size = 7;
 	button buttons[] = {b_lock, b_start, b_fast, b_centrifuga, b_slow, b_enxague, b_daily};	
@@ -597,7 +655,8 @@ int main(void){
 	sysclk_init(); /* Initialize system clocks */
 	WDT->WDT_MR = WDT_MR_WDDIS;
 	board_init();  /* Initialize board */
-	LED_init(0); // Inicializa LED ligado
+	LED_init(1); // Inicializa LED ligado
+	BUT_init();
 	configure_lcd();
 	draw_screen();
 	
@@ -612,8 +671,8 @@ int main(void){
 
 	//printf("\n\rmaXTouch data USART transmitter\n\r");
 	
+	isWashing = 0;
 	
-
 	while (true) {
 		/* Check for any pending messages and run message handler if any
 		 * message is found in the queue */
@@ -624,10 +683,16 @@ int main(void){
 		if (mxt_is_message_pending(&device)) {
 			uint8_t found = mxt_handler(&device, &x, &y);
 			if(found){
-				uint index = touch_buttons(buttons, size, x, y);
-				buttons[index].callback(&buttons[index], index, cicles);
-				//CALCULA O TEMPO EM MINUTOS DO CICLO ESCOLHIDO
-				minute = wash_time(cicles, wash_mode);
+				uint8_t index = touch_buttons(buttons, size, x, y);
+				if (index != (size+1)){
+					buttons[index].callback(&buttons[index], index, cicles);
+				}
+				
+				if (isWashing){
+					//CALCULA O TEMPO EM MINUTOS DO CICLO ESCOLHIDO
+					minute = wash_time(cicles, wash_mode);	
+				}
+				
 			}
 		
 		}
