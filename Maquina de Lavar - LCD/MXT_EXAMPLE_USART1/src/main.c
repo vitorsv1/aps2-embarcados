@@ -159,6 +159,8 @@ volatile uint32_t minute = 0;
 volatile uint32_t second = 0;
 volatile uint8_t washingLockScreen = 0;
 
+button *buttons2[] ;
+int wash_times[] = {0,0,0,0,0};
 //###############################################################################################################
 //CONFIGURAR E ETC
 
@@ -375,11 +377,11 @@ void draw_closeDoor(int shouldIDrawTheCloseTheDoorMessage){
 void draw_timer(){
 	
 	char tim[32];
-	
-	if (washingLockScreen){
-		draw_lockscreen();	
-		washingLockScreen = 0;
-	}
+	//
+	//if (washingLockScreen){
+		//draw_lockscreen();	
+		//washingLockScreen = 0;
+	//}
 	
 		
 	sprintf(tim,"%02d:%02d",minute, second);
@@ -388,19 +390,27 @@ void draw_timer(){
 
 //DESENHA O DISPLAY GERAL
 void draw_display(button b[], int size, t_ciclo cicles[] ,uint8_t mode) {
-	if (isWashing){	
-		draw_timer(minute,second);
-	}
-	else{
-		if(!locked){
-			draw_buttons(b,size);
-			draw_wash_mode(cicles,mode);
-		}
-		
-	}
+	//if (isWashing == 1){	
+		//draw_timer(minute,second);
+	//}
+	//else{
+		//if(!locked){
+			//draw_buttons(b,size);
+			//draw_wash_mode(cicles,mode);
+		//}
+		//
+	//}
 	if(locked){
-		draw_lockscreen();
 		draw_icon_button(b[0]);
+		if (isWashing == 1){
+			draw_timer(minute,second);
+		}
+		else if (isWashing ==2 ){
+			font_draw_text(&calibri_24, "yah boi terminou", ILI9488_LCD_WIDTH/2 - 30, ILI9488_LCD_HEIGHT - 210, 1);
+		}
+	}else{
+		draw_buttons(b,size);
+		draw_wash_mode(cicles,mode);
 	}
 	
 }
@@ -442,22 +452,27 @@ void RTC_Handler(void)
 	if ((ul_status & RTC_SR_SEC) == RTC_SR_SEC) {
 		rtc_clear_status(RTC, RTC_SCCR_SECCLR);
 		//MUDA AS VARIAVEIS DE ACORDO COM O TEMPO
-		if (second == 0){
-			minute--;
-			second = 59;
-		}else{
-			second--;
+		//buttons2[0]->state = buttons2[0]->state == 1 ? 2 : 1;
+		if (isWashing==1){
+			if (second == 0){
+				minute--;
+				second = 59;
+				}else{
+				second--;
+			}
 		}
 		
 	}
 	
 	//INTERRUPÇÃO POR ALARME
 	if ((ul_status & RTC_SR_ALARM) == RTC_SR_ALARM) {
-			rtc_get_time(RTC,&hour,&m,&se);
-			rtc_set_time_alarm(RTC, 1, hour, 1, m+minute, 1, se+second);
+		if (isWashing == 1){
+			isWashing = 2 ;
+
+		}
 
 			rtc_clear_status(RTC, RTC_SCCR_ALRCLR);
-			isWashing = 0;
+
 			
 	}
 	
@@ -495,7 +510,7 @@ int mxt_handler(struct mxt_device *device, uint16_t *x, uint16_t *y)
 		
 		//printf("%d", conv_x);
 		//printf("%d", conv_y);
-		
+		//printf("\nstatus do evento: %d",touch_event.status);
 		if (touch_event.status == 192)
 			found = 1;
 		
@@ -503,9 +518,9 @@ int mxt_handler(struct mxt_device *device, uint16_t *x, uint16_t *y)
 		*y = conv_y;
 		
 		/* Format a new entry in the data string that will be sent over USART */
-		sprintf(buf, "Nr: %1d, X:%4d, Y:%4d, Status:0x%2x conv X:%3d Y:%3d\n\r",
-				touch_event.id, touch_event.x, touch_event.y,
-				touch_event.status, conv_x, conv_y);
+		//sprintf(buf, "Nr: %1d, X:%4d, Y:%4d, Status:0x%2x conv X:%3d Y:%3d\n\r",
+				//touch_event.id, touch_event.x, touch_event.y,
+				//touch_event.status, conv_x, conv_y);
 		//update_screen(conv_x, conv_y);
 
 		/* Add the new string to the string buffer */
@@ -534,6 +549,8 @@ void callback_lock(button *b){
 	b->state = b->state == 1 ? 2 : 1;
 	locked = !locked;	
 	isWashing = 0;
+	draw_lockscreen();
+
 }
 
 void callback_wash_buttons(button *b, uint8_t index){
@@ -546,18 +563,35 @@ void callback_wash_buttons(button *b, uint8_t index){
 void callback_fast_wash(button *b){
 	b->state = b->state == 1 ? 2 : 1;
 	cleanScreen = 1;
-	isWashing = 0;
+}
+
+void handler_wash_buttons(button buttons[], int size){
+	for (int i = 2; i<size; i++){
+		buttons[i].state = 1;
+	}
 }
 
 void callback_start(button *b, uint8_t index){
 	b->state = b->state == 1 ? 2 : 1;
 	
-	
 	if (flag_led){
 		//SETA A FLAG DE LAVANDO
+		printf("flag led ativado: %d",flag_led);
+		uint16_t hour;
+		uint16_t m;
+		uint16_t se;
+		
 		isWashing = 1;	
 		washingLockScreen = 1;
 		draw_closeDoor(0);
+		
+		rtc_get_time(RTC,&hour,&m,&se);
+		rtc_set_time_alarm(RTC, 1, hour, 1, m + wash_times[index-2], 1, se);
+		locked = 1;
+		buttons2[0]->state = 1;
+		draw_lockscreen();
+
+
 	}else{
 		draw_closeDoor(1);
 	}
@@ -580,9 +614,7 @@ void BUT_init(void){
 	/* habilita interrup?c?o do PIO que controla o botao */
 	/* e configura sua prioridade                        */
 	NVIC_EnableIRQ(BUT_PIO_ID);
-	NVIC_SetPriority(BUT_PIO_ID, 1);
-	
-	pio_handler_set(BUT_PIO, BUT_PIO_ID, BUT_PIN_MASK, PIO_IT_FALL_EDGE, Button1_Handler);
+	NVIC_SetPriority(BUT_PIO_ID, 1);	
 }
 
 void RTC_init(){
@@ -639,6 +671,9 @@ int touch_buttons(button b[],uint8_t size , uint16_t xTouch, uint16_t yTouch){
 	for(int i = 0; i < size; i++){
 		if(isPressed(b[i], xTouch, yTouch)){
 			printf("Botao pressionado");
+			if(locked && i !=0){
+				return size+1;
+			}
 			return i;
 		}
 	}
@@ -659,11 +694,15 @@ int main(void){
 	
 	uint8_t size = 7;
 	button buttons[] = {b_lock, b_start, b_fast, b_centrifuga, b_slow, b_enxague, b_daily};	
-	
+	for (int i = 0; i<size;i++)
+	{
+		buttons2[i]=&buttons[i];
+	}
 	struct mxt_device device; /* Device data container */
 
 	t_ciclo cicles[] = {c_rapido, c_centrifuga,c_pesado, c_enxague,c_diario};
-	
+	uint8_t cicles_size = 5;
+
 	/* Initialize the USART configuration struct */
 	const usart_serial_options_t usart_serial_options = {
 		.baudrate     = USART_SERIAL_EXAMPLE_BAUDRATE,
@@ -690,25 +729,29 @@ int main(void){
 	stdio_serial_init(USART_SERIAL_EXAMPLE, &usart_serial_options);
 
 	//printf("\n\rmaXTouch data USART transmitter\n\r");
+	for (int i = 0; i<cicles_size;i++)
+	{
+		wash_times[i]=wash_time(cicles,i);
+	}
 	
 	isWashing = 0;
-	
+	flag_led = 0;
 	while (true) {
 		/* Check for any pending messages and run message handler if any
 		 * message is found in the queue */
 		uint16_t x,y;
-	
 		draw_display(buttons, size, cicles, wash_mode);
-		
 		if (mxt_is_message_pending(&device)) {
 			uint8_t found = mxt_handler(&device, &x, &y);
 			if(found){
 				uint8_t index = touch_buttons(buttons, size, x, y);
 				if (index != (size+1)){
-					buttons[index].callback(&buttons[index], index, cicles);
+					handler_wash_buttons(buttons,size);
+					buttons[index].callback(&buttons[index], index, cicles, buttons);
+
 				}
 				
-				if (isWashing){
+				if (isWashing==1){
 					//CALCULA O TEMPO EM MINUTOS DO CICLO ESCOLHIDO
 					minute = wash_time(cicles, wash_mode);	
 				}
