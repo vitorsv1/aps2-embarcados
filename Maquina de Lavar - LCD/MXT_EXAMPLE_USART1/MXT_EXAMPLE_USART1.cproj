@@ -749,19 +749,16 @@
     <Compile Include="src\icones\lock_white.h">
       <SubType>compile</SubType>
     </Compile>
-    <Compile Include="src\icones\unlock_grey.h">
-      <SubType>compile</SubType>
-    </Compile>
     <Compile Include="src\icones\unlock_white.h">
-      <SubType>compile</SubType>
-    </Compile>
-    <Compile Include="src\icones\wash.h">
       <SubType>compile</SubType>
     </Compile>
     <Compile Include="src\icones\water.h">
       <SubType>compile</SubType>
     </Compile>
     <Compile Include="src\icones\water_click.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="src\includes.h">
       <SubType>compile</SubType>
     </Compile>
     <Compile Include="src\logo.h">

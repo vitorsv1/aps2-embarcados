@@ -182,7 +182,7 @@ src/main.d src/main.o: ../src/main.c ../src/asf.h \
  c:\program\ files\ (x86)\atmel\studio\7.0\toolchain\arm\arm-gnu-toolchain\arm-none-eabi\include\string.h \
  c:\program\ files\ (x86)\atmel\studio\7.0\toolchain\arm\arm-gnu-toolchain\arm-none-eabi\include\xlocale.h \
  c:\program\ files\ (x86)\atmel\studio\7.0\toolchain\arm\arm-gnu-toolchain\arm-none-eabi\include\sys\string.h \
- ../src/tfont.h ../src/calibri_24.h ../src/maquina1.h \
+ ../src/includes.h ../src/tfont.h ../src/calibri_24.h ../src/maquina1.h \
  ../src/config/conf_board.h ../src/config/conf_example.h ../src/logo.h \
  ../src/icones/water.h ../src/icones/water_click.h \
  ../src/icones/lock_white.h ../src/icones/unlock_white.h \
@@ -577,6 +577,8 @@ c:\program\ files\ (x86)\atmel\studio\7.0\toolchain\arm\arm-gnu-toolchain\arm-no
 c:\program\ files\ (x86)\atmel\studio\7.0\toolchain\arm\arm-gnu-toolchain\arm-none-eabi\include\xlocale.h:
 
 c:\program\ files\ (x86)\atmel\studio\7.0\toolchain\arm\arm-gnu-toolchain\arm-none-eabi\include\sys\string.h:
+
+../src/includes.h:
 
 ../src/tfont.h:
 
