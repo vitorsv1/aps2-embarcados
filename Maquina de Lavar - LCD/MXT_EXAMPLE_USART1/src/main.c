@@ -653,7 +653,7 @@ int wash_time(t_ciclo cicles[], uint8_t mode){
 		t = t*1.2;
 	}
 	
-	return t;
+	return 1;
 }
 
 int isPressed(button b, uint16_t x, uint16_t y){
