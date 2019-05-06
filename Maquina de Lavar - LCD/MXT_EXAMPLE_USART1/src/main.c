@@ -89,6 +89,7 @@
 
 #include <asf.h>
 #include <includes.h>
+#include <gui.h>
 
 //############################################################################################################
 // DEFINES
@@ -310,23 +311,23 @@ void draw_wash_mode(t_ciclo cicles[] ,uint8_t mode) {
 		//LIMPAR A TELA
 		if (cleanScreen){
 			ili9488_set_foreground_color(COLOR_CONVERT(COLOR_WHITE));
-			ili9488_draw_filled_rectangle(20, 100, ILI9488_LCD_WIDTH-1, 235);
+			ili9488_draw_filled_rectangle(RECTX, RECTY, ILI9488_LCD_WIDTH-1, RECTY2);
 			cleanScreen = 0;
 		}
 		sprintf(nome,"%s",cicles[mode].nome);
-		font_draw_text(&calibri_24, nome, 20, 100, 1);
+		font_draw_text(&calibri_24, nome, TEXTX, NAMEY, SPACE);
 		
 		sprintf(enxagueTempo,"%d minutos",cicles[mode].enxagueTempo);
-		font_draw_text(&calibri_24, enxagueTempo, 20, 130, 1);
+		font_draw_text(&calibri_24, enxagueTempo, TEXTX, TEMPY, SPACE);
 		
 		sprintf(enxagueQnt,"%d enxagues",cicles[mode].enxagueQnt);
-		font_draw_text(&calibri_24, enxagueQnt, 20, 155, 1);
+		font_draw_text(&calibri_24, enxagueQnt, TEXTX, EXAQY, SPACE);
 		
 		sprintf(centrifugacaoRPM,"%d RPM",cicles[mode].centrifugacaoRPM);
-		font_draw_text(&calibri_24, centrifugacaoRPM, 20, 185, 1);
+		font_draw_text(&calibri_24, centrifugacaoRPM, TEXTX, RPMY, SPACE);
 		
 		sprintf(centrifugacaoTempo,"%d minutos",cicles[mode].centrifugacaoTempo);
-		font_draw_text(&calibri_24, centrifugacaoTempo, 20, 210, 1);
+		font_draw_text(&calibri_24, centrifugacaoTempo, TEXTX, CTIMY, SPACE);
 	}
 }
 
@@ -345,11 +346,11 @@ void draw_closeDoor(int shouldIDrawTheCloseTheDoorMessage){
 		draw_screen();
 	
 		sprintf(aviso,"%s","FECHAR PORTA!");
-		font_draw_text(&calibri_24, aviso, 110, 100, 1);
+		font_draw_text(&calibri_24, aviso, CLOSEX, CLOSEY, SPACE);
 	}
 	else {
 		ili9488_set_foreground_color(COLOR_CONVERT(COLOR_WHITE));
-		ili9488_draw_filled_rectangle(110, 100, ILI9488_LCD_WIDTH-1, 130);
+		ili9488_draw_filled_rectangle(CLOSEX, CLOSEY, ILI9488_LCD_WIDTH-1, CLOSEY2);
 	}
 }
 
@@ -359,7 +360,7 @@ void draw_timer(){
 	char tim[32];
 		
 	sprintf(tim,"%02d:%02d",minute, second);
-	font_draw_text(&calibri_24, tim, ILI9488_LCD_WIDTH/2 - 30, ILI9488_LCD_HEIGHT - 210, 1);
+	font_draw_text(&calibri_24, tim, ILI9488_LCD_WIDTH/2 - 30, ILI9488_LCD_HEIGHT - 210, SPACE);
 }
 
 //DESENHA O DISPLAY GERAL
@@ -373,7 +374,7 @@ void draw_display(button b[], int size, t_ciclo cicles[] ,uint8_t mode) {
 		}
 		//TERMINOU A LAVAGEM
 		else if (isWashing == 2){
-			font_draw_text(&calibri_24, "yah boi terminou", ILI9488_LCD_WIDTH/2 - 30, ILI9488_LCD_HEIGHT - 210, 1);
+			font_draw_text(&calibri_24, "yah boi terminou", ILI9488_LCD_WIDTH/2 - 30, ILI9488_LCD_HEIGHT - 210, SPACE);
 		}
 	}else{
 		draw_buttons(b,size);
@@ -649,13 +650,13 @@ int touch_buttons(button b[],uint8_t size , uint16_t xTouch, uint16_t yTouch){
 
 int main(void){
 	
-	button b_lock =	 {.x0 = 0, .y0 = 0, .state = 1, .icon1 = lock_white, .icon2 = unlock_white, .callback = callback_lock};
-	button b_centrifuga = {.x0 = ILI9488_LCD_WIDTH - 93, .y0 = ILI9488_LCD_HEIGHT - 195, .state = 1, .icon1 = centrifuge, .icon2 = centrifuge_click, .callback = callback_wash_buttons};
-	button b_fast = {.x0 = 110, .y0 = ILI9488_LCD_HEIGHT - 195, .state = 1, .icon1 = fast, .icon2 = fast_click, .callback = callback_wash_buttons};
-	button b_slow = {.x0 = 0, .y0 = ILI9488_LCD_HEIGHT - 195, .state = 1, .icon1 = heavy, .icon2 = heavy_click, .callback = callback_wash_buttons};
-	button b_daily = {.x0 = 45, .y0 = ILI9488_LCD_HEIGHT - 98, .state = 1, .icon1 = daily, .icon2 = daily_click, .callback = callback_wash_buttons};
-	button b_enxague = {.x0 = ILI9488_LCD_WIDTH - 138, .y0 = ILI9488_LCD_HEIGHT - 98, .state = 1, .icon1 = water, .icon2 = water_click, .callback = callback_wash_buttons};
-	button b_start = {.x0 = 320 - 93, .y0 = 0, .state = 1, .icon1 = clean, .icon2 = clean_click, .callback = callback_start};
+	button b_lock =	 {.x0 = LOCX, .y0 = LOCY, .state = 1, .icon1 = lock_white, .icon2 = unlock_white, .callback = callback_lock};
+	button b_centrifuga = {.x0 = CENTRIFX, .y0 = LINEBUT1, .state = 1, .icon1 = centrifuge, .icon2 = centrifuge_click, .callback = callback_wash_buttons};
+	button b_fast = {.x0 = FASTX, .y0 = LINEBUT1, .state = 1, .icon1 = fast, .icon2 = fast_click, .callback = callback_wash_buttons};
+	button b_slow = {.x0 = SLOWX, .y0 = LINEBUT1, .state = 1, .icon1 = heavy, .icon2 = heavy_click, .callback = callback_wash_buttons};
+	button b_daily = {.x0 = DAYX, .y0 = LINEBUT2, .state = 1, .icon1 = daily, .icon2 = daily_click, .callback = callback_wash_buttons};
+	button b_enxague = {.x0 = ENXX, .y0 = LINEBUT2, .state = 1, .icon1 = water, .icon2 = water_click, .callback = callback_wash_buttons};
+	button b_start = {.x0 = STARTX, .y0 = STARTY, .state = 1, .icon1 = clean, .icon2 = clean_click, .callback = callback_start};
 	
 	const uint8_t size = 7;
 
