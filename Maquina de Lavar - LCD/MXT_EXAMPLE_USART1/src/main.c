@@ -273,7 +273,6 @@ void pin_toggle(Pio *pio, uint32_t mask){
 }
 
 //###############################################################################################################
-//DRAWS
 
 //DESENHA A TELA BRANCA DE FUNDO
 void draw_screen(void) {
@@ -290,7 +289,6 @@ void draw_lockscreen(void) {
 
 //TROCA O ICON DO BUTTON DESENHADO
 void draw_icon_button(button b) {
-	//printf("%d", b.state);
 	if(b.state == 2) {
 		ili9488_draw_pixmap(b.x0, b.y0, b.icon2.width, b.icon2.height, b.icon2.data);
 	} else if(b.state == 1){
@@ -309,6 +307,7 @@ void draw_wash_mode(t_ciclo cicles[] ,uint8_t mode) {
 		char centrifugacaoRPM[32];
 		char centrifugacaoTempo[32];
 		
+		//LIMPAR A TELA
 		if (cleanScreen){
 			ili9488_set_foreground_color(COLOR_CONVERT(COLOR_WHITE));
 			ili9488_draw_filled_rectangle(20, 100, ILI9488_LCD_WIDTH-1, 235);
@@ -367,10 +366,13 @@ void draw_timer(){
 void draw_display(button b[], int size, t_ciclo cicles[] ,uint8_t mode) {
 	if(locked){
 		draw_icon_button(b[0]);
+		
+		//COMEÇOU A LAVAGEM
 		if (isWashing == 1){
 			draw_timer(minute,second);
 		}
-		else if (isWashing ==2 ){
+		//TERMINOU A LAVAGEM
+		else if (isWashing == 2){
 			font_draw_text(&calibri_24, "yah boi terminou", ILI9488_LCD_WIDTH/2 - 30, ILI9488_LCD_HEIGHT - 210, 1);
 		}
 	}else{
@@ -416,7 +418,7 @@ void RTC_Handler(void)
 	//INTERRUP��O POR SEGUNDO
 	if ((ul_status & RTC_SR_SEC) == RTC_SR_SEC) {
 		rtc_clear_status(RTC, RTC_SCCR_SECCLR);
-		//MUDA AS VARIAVEIS DE ACORDO COM O TEMPO
+		//MUDA AS VARIAVEIS DE ACORDO COM O TEMPO SE TIVER LAVANDO
 		if (isWashing==1){
 			if (second == 0){
 				minute--;
@@ -430,13 +432,12 @@ void RTC_Handler(void)
 	
 	//INTERRUP��O POR ALARME
 	if ((ul_status & RTC_SR_ALARM) == RTC_SR_ALARM) {
+		//Terminou a lavagem mudando valor da variavel para o mesmo
 		if (isWashing == 1){
 			isWashing = 2 ;
-
 		}
 
-			rtc_clear_status(RTC, RTC_SCCR_ALRCLR);
-
+		rtc_clear_status(RTC, RTC_SCCR_ALRCLR);
 			
 	}
 	
