@@ -371,16 +371,6 @@ void draw_timer(){
 
 //DESENHA O DISPLAY GERAL
 void draw_display(button b[], int size, t_ciclo cicles[] ,uint8_t mode) {
-	//if (isWashing == 1){	
-		//draw_timer(minute,second);
-	//}
-	//else{
-		//if(!locked){
-			//draw_buttons(b,size);
-			//draw_wash_mode(cicles,mode);
-		//}
-		//
-	//}
 	if(locked){
 		draw_icon_button(b[0]);
 		if (isWashing == 1){
@@ -433,7 +423,6 @@ void RTC_Handler(void)
 	if ((ul_status & RTC_SR_SEC) == RTC_SR_SEC) {
 		rtc_clear_status(RTC, RTC_SCCR_SECCLR);
 		//MUDA AS VARIAVEIS DE ACORDO COM O TEMPO
-		//buttons2[0]->state = buttons2[0]->state == 1 ? 2 : 1;
 		if (isWashing==1){
 			if (second == 0){
 				minute--;
