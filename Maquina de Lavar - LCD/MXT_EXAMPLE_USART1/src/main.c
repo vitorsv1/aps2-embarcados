@@ -649,6 +649,12 @@ int touch_buttons(button b[],uint8_t size , uint16_t xTouch, uint16_t yTouch){
 
 int main(void){
 	
+	sysclk_init(); /* Initialize system clocks */
+	WDT->WDT_MR = WDT_MR_WDDIS; // WatchDog
+	board_init();  /* Initialize board */
+	LED_init(0); // Inicializa LED ligado
+	BUT_init(); // Inicializando Botao
+
 	button b_lock =	 {.x0 = 0, .y0 = 0, .state = 1, .icon1 = lock_white, .icon2 = unlock_white, .callback = callback_lock};
 	button b_centrifuga = {.x0 = ILI9488_LCD_WIDTH - 93, .y0 = ILI9488_LCD_HEIGHT - 195, .state = 1, .icon1 = centrifuge, .icon2 = centrifuge_click, .callback = callback_wash_buttons};
 	button b_fast = {.x0 = 110, .y0 = ILI9488_LCD_HEIGHT - 195, .state = 1, .icon1 = fast, .icon2 = fast_click, .callback = callback_wash_buttons};
@@ -660,13 +666,16 @@ int main(void){
 	const uint8_t size = 7;
 
 	button buttons[] = {b_lock, b_start, b_fast, b_centrifuga, b_slow, b_enxague, b_daily};	
+	
 	for (int i = 0; i<size;i++)
 	{
 		buttons2[i]=&buttons[i];
 	}
+	
 	struct mxt_device device; /* Device data container */
 
 	t_ciclo cicles[] = {c_rapido, c_centrifuga,c_pesado, c_enxague,c_diario};
+	
 	uint8_t cicles_size = 5;
 
 	/* Initialize the USART configuration struct */
@@ -677,11 +686,6 @@ int main(void){
 		.stopbits     = USART_SERIAL_STOP_BIT
 	};
 
-	sysclk_init(); /* Initialize system clocks */
-	WDT->WDT_MR = WDT_MR_WDDIS;
-	board_init();  /* Initialize board */
-	LED_init(0); // Inicializa LED ligado
-	BUT_init();
 	configure_lcd();
 	draw_screen();
 	
@@ -690,11 +694,9 @@ int main(void){
 	/* Initialize the mXT touch device */
 	mxt_init(&device);
 	
-	
 	/* Initialize stdio on USART */
 	stdio_serial_init(USART_SERIAL_EXAMPLE, &usart_serial_options);
 
-	//printf("\n\rmaXTouch data USART transmitter\n\r");
 	for (int i = 0; i<cicles_size;i++)
 	{
 		wash_times[i]=wash_time(cicles,i);
@@ -702,6 +704,7 @@ int main(void){
 	
 	isWashing = 0;
 	flag_led = 0;
+
 	while (true) {
 		/* Check for any pending messages and run message handler if any
 		 * message is found in the queue */
