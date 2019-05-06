@@ -118,7 +118,7 @@
 //############################################################################################################
 // STRUCTS
 typedef struct {
-	uint   state;
+	uint8_t   state;
 	tImage icon1;
 	tImage icon2;
 	uint16_t x0;
@@ -140,6 +140,7 @@ volatile uint32_t second = 0;
 volatile uint8_t washingLockScreen = 0;
 
 button *buttons2[] ;
+
 int wash_times[] = {0,0,0,0,0};
 //###############################################################################################################
 //CONFIGURAR E ETC
@@ -330,7 +331,7 @@ void draw_wash_mode(t_ciclo cicles[] ,uint8_t mode) {
 	}
 }
 
-//DESENHA O BOTÃO DA LISTA
+//DESENHA O BOTï¿½O DA LISTA
 void draw_buttons(button b[], int size){
 	for (int i = 0; i < size; i++){
 		draw_icon_button(b[i]);
@@ -428,7 +429,7 @@ void RTC_Handler(void)
 	uint16_t hour;
 	uint16_t m;
 	uint16_t se;
-	//INTERRUPÇÃO POR SEGUNDO
+	//INTERRUPï¿½ï¿½O POR SEGUNDO
 	if ((ul_status & RTC_SR_SEC) == RTC_SR_SEC) {
 		rtc_clear_status(RTC, RTC_SCCR_SECCLR);
 		//MUDA AS VARIAVEIS DE ACORDO COM O TEMPO
@@ -444,7 +445,7 @@ void RTC_Handler(void)
 		
 	}
 	
-	//INTERRUPÇÃO POR ALARME
+	//INTERRUPï¿½ï¿½O POR ALARME
 	if ((ul_status & RTC_SR_ALARM) == RTC_SR_ALARM) {
 		if (isWashing == 1){
 			isWashing = 2 ;
@@ -579,7 +580,7 @@ void callback_start(button *b, uint8_t index){
 }
 
 //###############################################################################################################
-//FUNÇÕES
+//FUNï¿½ï¿½ES
 
 void BUT_init(void){
 	/* config. pino botao em modo de entrada */
@@ -672,7 +673,8 @@ int main(void){
 	button b_enxague = {.x0 = ILI9488_LCD_WIDTH - 138, .y0 = ILI9488_LCD_HEIGHT - 98, .state = 1, .icon1 = water, .icon2 = water_click, .callback = callback_wash_buttons};
 	button b_start = {.x0 = 320 - 93, .y0 = 0, .state = 1, .icon1 = clean, .icon2 = clean_click, .callback = callback_start};
 	
-	uint8_t size = 7;
+	const uint8_t size = 7;
+
 	button buttons[] = {b_lock, b_start, b_fast, b_centrifuga, b_slow, b_enxague, b_daily};	
 	for (int i = 0; i<size;i++)
 	{
