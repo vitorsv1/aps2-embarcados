@@ -358,12 +358,6 @@ void draw_closeDoor(int shouldIDrawTheCloseTheDoorMessage){
 void draw_timer(){
 	
 	char tim[32];
-	//
-	//if (washingLockScreen){
-		//draw_lockscreen();	
-		//washingLockScreen = 0;
-	//}
-	
 		
 	sprintf(tim,"%02d:%02d",minute, second);
 	font_draw_text(&calibri_24, tim, ILI9488_LCD_WIDTH/2 - 30, ILI9488_LCD_HEIGHT - 210, 1);
