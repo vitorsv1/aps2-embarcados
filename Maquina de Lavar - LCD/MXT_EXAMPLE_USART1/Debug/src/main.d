@@ -190,7 +190,7 @@ src/main.d src/main.o: ../src/main.c ../src/asf.h \
  ../src/icones/clean_click.h ../src/icones/centrifuge.h \
  ../src/icones/centrifuge_click.h ../src/icones/daily.h \
  ../src/icones/daily_click.h ../src/icones/heavy.h \
- ../src/icones/heavy_click.h
+ ../src/icones/heavy_click.h ../src/gui.h
 
 ../src/asf.h:
 
@@ -619,3 +619,5 @@ c:\program\ files\ (x86)\atmel\studio\7.0\toolchain\arm\arm-gnu-toolchain\arm-no
 ../src/icones/heavy.h:
 
 ../src/icones/heavy_click.h:
+
+../src/gui.h:

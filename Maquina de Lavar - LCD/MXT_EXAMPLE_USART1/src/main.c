@@ -367,28 +367,12 @@ void draw_timer(){
 
 //DESENHA O DISPLAY GERAL
 void draw_display(button b[], int size, t_ciclo cicles[] ,uint8_t mode) {
-<<<<<<< HEAD
-	//if (isWashing == 1){	
-		//draw_timer(minute,second);
-	//}
-	//else{
-		//if(!locked){
-			//draw_buttons(b,size);
-			//draw_wash_mode(cicles,mode);
-		//}
-		//
-	//}
+
 	draw_icon_button(b[0]);
 
 	if(locked){
 		draw_lockscreen();
-
-=======
-	if(locked){
-		draw_icon_button(b[0]);
-		
-		//COMEÇOU A LAVAGEM
->>>>>>> 965f3d468c2ace6d3a154a097b34bfa3b852a301
+		//COMECOU A LAVAGEM
 		if (isWashing == 1){
 			draw_timer(minute,second);
 		}
@@ -440,9 +424,7 @@ void RTC_Handler(void)
 	//INTERRUP��O POR SEGUNDO
 	if ((ul_status & RTC_SR_SEC) == RTC_SR_SEC) {
 		rtc_clear_status(RTC, RTC_SCCR_SECCLR);
-<<<<<<< HEAD
 		//MUDA AS VARIAVEIS DE ACORDO COM O TEMPO
-		//buttons2[0]->state = buttons2[0]->state == 1 ? 2 : 1;
 		if ((isLocking >=1 && isLocking <4) && (event_status > 32 && event_status <192)){
 			isLocking++;
 		}
@@ -451,9 +433,6 @@ void RTC_Handler(void)
 			buttons2[0]->state = buttons2[0]->state == 1 ? 2 : 1;
 			isLocking = 0;
 		}
-=======
-		//MUDA AS VARIAVEIS DE ACORDO COM O TEMPO SE TIVER LAVANDO
->>>>>>> 965f3d468c2ace6d3a154a097b34bfa3b852a301
 		if (isWashing==1){
 			if (second == 0){
 				minute--;

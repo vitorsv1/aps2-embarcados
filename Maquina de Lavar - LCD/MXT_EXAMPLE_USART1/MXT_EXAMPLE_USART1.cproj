@@ -716,6 +716,9 @@
     <Compile Include="src\calibri_24.h">
       <SubType>compile</SubType>
     </Compile>
+    <Compile Include="src\gui.h">
+      <SubType>compile</SubType>
+    </Compile>
     <Compile Include="src\icones\centrifuge.h">
       <SubType>compile</SubType>
     </Compile>
