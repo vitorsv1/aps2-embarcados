@@ -13,8 +13,8 @@ const uint8_t CLOSEY = 100;
 const uint8_t CLOSEY2 = 130;
 
 const uint8_t CENTRIFX = 227;
-const uint8_t LINEBUT1 = 285;
-const uint8_t LINEBUT2 = 385;
+const uint16_t LINEBUT1 = 285;
+const uint16_t LINEBUT2 = 385;
 const uint8_t LOCX = 0;
 const uint8_t LOCY = 0;
 const uint8_t SLOWX = 0;

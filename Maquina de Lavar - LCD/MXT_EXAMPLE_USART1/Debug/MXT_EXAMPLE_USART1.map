@@ -7626,9 +7626,9 @@ Discarded input sections
  .rodata.CENTRIFX
                 0x00000000        0x1 src/main.o
  .rodata.LINEBUT1
-                0x00000000        0x1 src/main.o
+                0x00000000        0x2 src/main.o
  .rodata.LINEBUT2
-                0x00000000        0x1 src/main.o
+                0x00000000        0x2 src/main.o
  .rodata.LOCX   0x00000000        0x1 src/main.o
  .rodata.LOCY   0x00000000        0x1 src/main.o
  .rodata.SLOWX  0x00000000        0x1 src/main.o
@@ -9990,7 +9990,7 @@ OUTPUT(MXT_EXAMPLE_USART1.elf elf32-littlearm)
  .comment       0x00000059       0x5a src/ASF/sam/utils/syscalls/gcc/syscalls.o
  .comment       0x00000059       0x5a src/main.o
 
-.debug_info     0x00000000    0x1fc01
+.debug_info     0x00000000    0x1fc06
  .debug_info    0x00000000     0x1158 src/ASF/sam/drivers/rtc/rtc.o
  .debug_info    0x00001158     0x20c4 src/ASF/common/components/touch/mxt/mxt_device_1.o
  .debug_info    0x0000321c     0x1311 src/ASF/common/services/clock/same70/sysclk.o
@@ -10012,7 +10012,7 @@ OUTPUT(MXT_EXAMPLE_USART1.elf elf32-littlearm)
  .debug_info    0x000184cf     0x1612 src/ASF/sam/utils/cmsis/same70/source/templates/gcc/startup_same70.o
  .debug_info    0x00019ae1      0x5d4 src/ASF/sam/utils/cmsis/same70/source/templates/system_same70.o
  .debug_info    0x0001a0b5      0xdbc src/ASF/sam/utils/syscalls/gcc/syscalls.o
- .debug_info    0x0001ae71     0x4d90 src/main.o
+ .debug_info    0x0001ae71     0x4d95 src/main.o
 
 .debug_abbrev   0x00000000     0x390a
  .debug_abbrev  0x00000000      0x257 src/ASF/sam/drivers/rtc/rtc.o
