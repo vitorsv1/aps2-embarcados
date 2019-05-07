@@ -138,6 +138,8 @@ volatile uint8_t isWashing = 0;
 volatile uint32_t minute = 0;
 volatile uint32_t second = 0;
 volatile uint8_t washingLockScreen = 0;
+volatile uint8_t isLocking = 0;
+volatile uint16_t event_status = 0;
 
 button *buttons2[] ;
 
@@ -381,8 +383,11 @@ void draw_display(button b[], int size, t_ciclo cicles[] ,uint8_t mode) {
 		//}
 		//
 	//}
+	draw_icon_button(b[0]);
+
 	if(locked){
-		draw_icon_button(b[0]);
+		draw_lockscreen();
+
 		if (isWashing == 1){
 			draw_timer(minute,second);
 		}
@@ -393,7 +398,8 @@ void draw_display(button b[], int size, t_ciclo cicles[] ,uint8_t mode) {
 		draw_buttons(b,size);
 		draw_wash_mode(cicles,mode);
 	}
-	
+
+
 }
 
 //###############################################################################################################
@@ -434,6 +440,14 @@ void RTC_Handler(void)
 		rtc_clear_status(RTC, RTC_SCCR_SECCLR);
 		//MUDA AS VARIAVEIS DE ACORDO COM O TEMPO
 		//buttons2[0]->state = buttons2[0]->state == 1 ? 2 : 1;
+		if ((isLocking >=1 && isLocking <4) && (event_status > 32 && event_status <192)){
+			isLocking++;
+		}
+		else if( isLocking >= 4){
+			locked = !locked;
+			buttons2[0]->state = buttons2[0]->state == 1 ? 2 : 1;
+			isLocking = 0;
+		}
 		if (isWashing==1){
 			if (second == 0){
 				minute--;
@@ -442,6 +456,7 @@ void RTC_Handler(void)
 				second--;
 			}
 		}
+
 		
 	}
 	
@@ -464,7 +479,7 @@ void RTC_Handler(void)
 	
 }
 
-int mxt_handler(struct mxt_device *device, uint16_t *x, uint16_t *y)
+int mxt_handler(struct mxt_device *device, uint16_t *x, uint16_t *y, uint16_t *event_status)
 {
 	/* USART tx buffer initialized to 0 */
 	char tx_buf[STRING_LENGTH * MAX_ENTRIES] = {0};
@@ -494,9 +509,10 @@ int mxt_handler(struct mxt_device *device, uint16_t *x, uint16_t *y)
 		//printf("\nstatus do evento: %d",touch_event.status);
 		if (touch_event.status == 192)
 			found = 1;
-		
+	
 		*x = conv_x;
 		*y = conv_y;
+		*event_status = touch_event.status;
 		
 		/* Format a new entry in the data string that will be sent over USART */
 		//sprintf(buf, "Nr: %1d, X:%4d, Y:%4d, Status:0x%2x conv X:%3d Y:%3d\n\r",
@@ -527,10 +543,11 @@ int mxt_handler(struct mxt_device *device, uint16_t *x, uint16_t *y)
 //CALL BACKS
 void callback_lock(button *b){
 	printf("\nCALLBACK DO LOCK");
-	b->state = b->state == 1 ? 2 : 1;
-	locked = !locked;	
+	if(isLocking < 1 ){
+		isLocking = 1 ;
+	}
 	isWashing = 0;
-	draw_lockscreen();
+	//draw_lockscreen();
 
 }
 
@@ -655,7 +672,7 @@ int touch_buttons(button b[],uint8_t size , uint16_t xTouch, uint16_t yTouch){
 			if(locked && i !=0){
 				return size+1;
 			}
-			return i;
+		return i;
 		}
 	}
 	return size + 1;
@@ -718,13 +735,14 @@ int main(void){
 	
 	isWashing = 0;
 	flag_led = 0;
+
 	while (true) {
 		/* Check for any pending messages and run message handler if any
 		 * message is found in the queue */
 		uint16_t x,y;
 		draw_display(buttons, size, cicles, wash_mode);
 		if (mxt_is_message_pending(&device)) {
-			uint8_t found = mxt_handler(&device, &x, &y);
+			uint8_t found = mxt_handler(&device, &x, &y, &event_status);
 			if(found){
 				uint8_t index = touch_buttons(buttons, size, x, y);
 				if (index != (size+1)){
