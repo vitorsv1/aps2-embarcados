@@ -298,9 +298,9 @@ void draw_lockscreen(void) {
 
 //TROCA O ICON DO BUTTON DESENHADO
 void draw_icon_button(button b) {
-	if(b.state == 2) {
+	if(b.state == RELEASED) {
 		ili9488_draw_pixmap(b.x0, b.y0, b.icon2.width, b.icon2.height, b.icon2.data);
-	} else if(b.state == 1){
+	} else if(b.state == CLICKED){
 		ili9488_draw_pixmap(b.x0, b.y0, b.icon1.width, b.icon1.height, b.icon1.data);
 	}
 }
@@ -379,11 +379,11 @@ void draw_display(button b[], int size, t_ciclo cicles[] ,uint8_t mode) {
 	if(locked){
 		draw_lockscreen();
 		//COMECOU A LAVAGEM
-		if (isWashing == 1){
+		if (isWashing == WASHING){
 			draw_timer(minute,second);
 		}
 		//TERMINOU A LAVAGEM
-		else if (isWashing == 2){
+		else if (isWashing == FINISHED){
 			font_draw_text(&calibri_24, "yah boi terminou", ILI9488_LCD_WIDTH/2 - 30, ILI9488_LCD_HEIGHT - 210, SPACE);
 		}
 	}else{
