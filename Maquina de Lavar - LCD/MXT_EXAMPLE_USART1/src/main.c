@@ -102,6 +102,12 @@
 #define MINUTE      0
 #define SECOND      0
 
+#define CLICKED 1
+#define RELEASED 2
+
+#define WASHING 1
+#define FINISHED 2
+
 #define MAX_ENTRIES        3
 #define STRING_LENGTH     70
 #define USART_TX_MAX_LENGTH     0xff
@@ -408,8 +414,10 @@ uint32_t convert_axis_system_y(uint32_t touch_x) {
 *  Handle Interrupcao botao 1
 */
 static void Button1_Handler(uint32_t id, uint32_t mask){
-	flag_led = !flag_led;
-	pin_toggle(LED_PIO, LED_PIN_MASK);
+	if(!locked){
+		flag_led = !flag_led;
+		pin_toggle(LED_PIO, LED_PIN_MASK);
+	}
 }
 
 /**
