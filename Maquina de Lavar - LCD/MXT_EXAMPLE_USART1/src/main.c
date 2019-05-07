@@ -89,6 +89,7 @@
 
 #include <asf.h>
 #include <includes.h>
+#include <gui.h>
 
 //############################################################################################################
 // DEFINES
@@ -275,7 +276,6 @@ void pin_toggle(Pio *pio, uint32_t mask){
 }
 
 //###############################################################################################################
-//DRAWS
 
 //DESENHA A TELA BRANCA DE FUNDO
 void draw_screen(void) {
@@ -292,7 +292,6 @@ void draw_lockscreen(void) {
 
 //TROCA O ICON DO BUTTON DESENHADO
 void draw_icon_button(button b) {
-	//printf("%d", b.state);
 	if(b.state == 2) {
 		ili9488_draw_pixmap(b.x0, b.y0, b.icon2.width, b.icon2.height, b.icon2.data);
 	} else if(b.state == 1){
@@ -311,25 +310,26 @@ void draw_wash_mode(t_ciclo cicles[] ,uint8_t mode) {
 		char centrifugacaoRPM[32];
 		char centrifugacaoTempo[32];
 		
+		//LIMPAR A TELA
 		if (cleanScreen){
 			ili9488_set_foreground_color(COLOR_CONVERT(COLOR_WHITE));
-			ili9488_draw_filled_rectangle(20, 100, ILI9488_LCD_WIDTH-1, 235);
+			ili9488_draw_filled_rectangle(RECTX, RECTY, ILI9488_LCD_WIDTH-1, RECTY2);
 			cleanScreen = 0;
 		}
 		sprintf(nome,"%s",cicles[mode].nome);
-		font_draw_text(&calibri_24, nome, 20, 100, 1);
+		font_draw_text(&calibri_24, nome, TEXTX, NAMEY, SPACE);
 		
 		sprintf(enxagueTempo,"%d minutos",cicles[mode].enxagueTempo);
-		font_draw_text(&calibri_24, enxagueTempo, 20, 130, 1);
+		font_draw_text(&calibri_24, enxagueTempo, TEXTX, TEMPY, SPACE);
 		
 		sprintf(enxagueQnt,"%d enxagues",cicles[mode].enxagueQnt);
-		font_draw_text(&calibri_24, enxagueQnt, 20, 155, 1);
+		font_draw_text(&calibri_24, enxagueQnt, TEXTX, EXAQY, SPACE);
 		
 		sprintf(centrifugacaoRPM,"%d RPM",cicles[mode].centrifugacaoRPM);
-		font_draw_text(&calibri_24, centrifugacaoRPM, 20, 185, 1);
+		font_draw_text(&calibri_24, centrifugacaoRPM, TEXTX, RPMY, SPACE);
 		
 		sprintf(centrifugacaoTempo,"%d minutos",cicles[mode].centrifugacaoTempo);
-		font_draw_text(&calibri_24, centrifugacaoTempo, 20, 210, 1);
+		font_draw_text(&calibri_24, centrifugacaoTempo, TEXTX, CTIMY, SPACE);
 	}
 }
 
@@ -348,11 +348,11 @@ void draw_closeDoor(int shouldIDrawTheCloseTheDoorMessage){
 		draw_screen();
 	
 		sprintf(aviso,"%s","FECHAR PORTA!");
-		font_draw_text(&calibri_24, aviso, 110, 100, 1);
+		font_draw_text(&calibri_24, aviso, CLOSEX, CLOSEY, SPACE);
 	}
 	else {
 		ili9488_set_foreground_color(COLOR_CONVERT(COLOR_WHITE));
-		ili9488_draw_filled_rectangle(110, 100, ILI9488_LCD_WIDTH-1, 130);
+		ili9488_draw_filled_rectangle(CLOSEX, CLOSEY, ILI9488_LCD_WIDTH-1, CLOSEY2);
 	}
 }
 
@@ -360,19 +360,14 @@ void draw_closeDoor(int shouldIDrawTheCloseTheDoorMessage){
 void draw_timer(){
 	
 	char tim[32];
-	//
-	//if (washingLockScreen){
-		//draw_lockscreen();	
-		//washingLockScreen = 0;
-	//}
-	
 		
 	sprintf(tim,"%02d:%02d",minute, second);
-	font_draw_text(&calibri_24, tim, ILI9488_LCD_WIDTH/2 - 30, ILI9488_LCD_HEIGHT - 210, 1);
+	font_draw_text(&calibri_24, tim, ILI9488_LCD_WIDTH/2 - 30, ILI9488_LCD_HEIGHT - 210, SPACE);
 }
 
 //DESENHA O DISPLAY GERAL
 void draw_display(button b[], int size, t_ciclo cicles[] ,uint8_t mode) {
+<<<<<<< HEAD
 	//if (isWashing == 1){	
 		//draw_timer(minute,second);
 	//}
@@ -388,11 +383,18 @@ void draw_display(button b[], int size, t_ciclo cicles[] ,uint8_t mode) {
 	if(locked){
 		draw_lockscreen();
 
+=======
+	if(locked){
+		draw_icon_button(b[0]);
+		
+		//COMEÇOU A LAVAGEM
+>>>>>>> 965f3d468c2ace6d3a154a097b34bfa3b852a301
 		if (isWashing == 1){
 			draw_timer(minute,second);
 		}
-		else if (isWashing ==2 ){
-			font_draw_text(&calibri_24, "yah boi terminou", ILI9488_LCD_WIDTH/2 - 30, ILI9488_LCD_HEIGHT - 210, 1);
+		//TERMINOU A LAVAGEM
+		else if (isWashing == 2){
+			font_draw_text(&calibri_24, "yah boi terminou", ILI9488_LCD_WIDTH/2 - 30, ILI9488_LCD_HEIGHT - 210, SPACE);
 		}
 	}else{
 		draw_buttons(b,size);
@@ -438,6 +440,7 @@ void RTC_Handler(void)
 	//INTERRUP��O POR SEGUNDO
 	if ((ul_status & RTC_SR_SEC) == RTC_SR_SEC) {
 		rtc_clear_status(RTC, RTC_SCCR_SECCLR);
+<<<<<<< HEAD
 		//MUDA AS VARIAVEIS DE ACORDO COM O TEMPO
 		//buttons2[0]->state = buttons2[0]->state == 1 ? 2 : 1;
 		if ((isLocking >=1 && isLocking <4) && (event_status > 32 && event_status <192)){
@@ -448,6 +451,9 @@ void RTC_Handler(void)
 			buttons2[0]->state = buttons2[0]->state == 1 ? 2 : 1;
 			isLocking = 0;
 		}
+=======
+		//MUDA AS VARIAVEIS DE ACORDO COM O TEMPO SE TIVER LAVANDO
+>>>>>>> 965f3d468c2ace6d3a154a097b34bfa3b852a301
 		if (isWashing==1){
 			if (second == 0){
 				minute--;
@@ -462,13 +468,12 @@ void RTC_Handler(void)
 	
 	//INTERRUP��O POR ALARME
 	if ((ul_status & RTC_SR_ALARM) == RTC_SR_ALARM) {
+		//Terminou a lavagem mudando valor da variavel para o mesmo
 		if (isWashing == 1){
 			isWashing = 2 ;
-
 		}
 
-			rtc_clear_status(RTC, RTC_SCCR_ALRCLR);
-
+		rtc_clear_status(RTC, RTC_SCCR_ALRCLR);
 			
 	}
 	
@@ -682,24 +687,33 @@ int touch_buttons(button b[],uint8_t size , uint16_t xTouch, uint16_t yTouch){
 
 int main(void){
 	
-	button b_lock =	 {.x0 = 0, .y0 = 0, .state = 1, .icon1 = lock_white, .icon2 = unlock_white, .callback = callback_lock};
-	button b_centrifuga = {.x0 = ILI9488_LCD_WIDTH - 93, .y0 = ILI9488_LCD_HEIGHT - 195, .state = 1, .icon1 = centrifuge, .icon2 = centrifuge_click, .callback = callback_wash_buttons};
-	button b_fast = {.x0 = 110, .y0 = ILI9488_LCD_HEIGHT - 195, .state = 1, .icon1 = fast, .icon2 = fast_click, .callback = callback_wash_buttons};
-	button b_slow = {.x0 = 0, .y0 = ILI9488_LCD_HEIGHT - 195, .state = 1, .icon1 = heavy, .icon2 = heavy_click, .callback = callback_wash_buttons};
-	button b_daily = {.x0 = 45, .y0 = ILI9488_LCD_HEIGHT - 98, .state = 1, .icon1 = daily, .icon2 = daily_click, .callback = callback_wash_buttons};
-	button b_enxague = {.x0 = ILI9488_LCD_WIDTH - 138, .y0 = ILI9488_LCD_HEIGHT - 98, .state = 1, .icon1 = water, .icon2 = water_click, .callback = callback_wash_buttons};
-	button b_start = {.x0 = 320 - 93, .y0 = 0, .state = 1, .icon1 = clean, .icon2 = clean_click, .callback = callback_start};
-	
+  sysclk_init(); /* Initialize system clocks */
+	WDT->WDT_MR = WDT_MR_WDDIS; // WatchDog
+	board_init();  /* Initialize board */
+	LED_init(0); // Inicializa LED ligado
+	BUT_init(); // Inicializando Botao
+  
+	button b_lock =	 {.x0 = LOCX, .y0 = LOCY, .state = 1, .icon1 = lock_white, .icon2 = unlock_white, .callback = callback_lock};
+	button b_centrifuga = {.x0 = CENTRIFX, .y0 = LINEBUT1, .state = 1, .icon1 = centrifuge, .icon2 = centrifuge_click, .callback = callback_wash_buttons};
+	button b_fast = {.x0 = FASTX, .y0 = LINEBUT1, .state = 1, .icon1 = fast, .icon2 = fast_click, .callback = callback_wash_buttons};
+	button b_slow = {.x0 = SLOWX, .y0 = LINEBUT1, .state = 1, .icon1 = heavy, .icon2 = heavy_click, .callback = callback_wash_buttons};
+	button b_daily = {.x0 = DAYX, .y0 = LINEBUT2, .state = 1, .icon1 = daily, .icon2 = daily_click, .callback = callback_wash_buttons};
+	button b_enxague = {.x0 = ENXX, .y0 = LINEBUT2, .state = 1, .icon1 = water, .icon2 = water_click, .callback = callback_wash_buttons};
+	button b_start = {.x0 = STARTX, .y0 = STARTY, .state = 1, .icon1 = clean, .icon2 = clean_click, .callback = callback_start};	
+  	
 	const uint8_t size = 7;
 
 	button buttons[] = {b_lock, b_start, b_fast, b_centrifuga, b_slow, b_enxague, b_daily};	
+	
 	for (int i = 0; i<size;i++)
 	{
 		buttons2[i]=&buttons[i];
 	}
+	
 	struct mxt_device device; /* Device data container */
 
 	t_ciclo cicles[] = {c_rapido, c_centrifuga,c_pesado, c_enxague,c_diario};
+	
 	uint8_t cicles_size = 5;
 
 	/* Initialize the USART configuration struct */
@@ -710,11 +724,6 @@ int main(void){
 		.stopbits     = USART_SERIAL_STOP_BIT
 	};
 
-	sysclk_init(); /* Initialize system clocks */
-	WDT->WDT_MR = WDT_MR_WDDIS;
-	board_init();  /* Initialize board */
-	LED_init(0); // Inicializa LED ligado
-	BUT_init();
 	configure_lcd();
 	draw_screen();
 	
@@ -723,11 +732,9 @@ int main(void){
 	/* Initialize the mXT touch device */
 	mxt_init(&device);
 	
-	
 	/* Initialize stdio on USART */
 	stdio_serial_init(USART_SERIAL_EXAMPLE, &usart_serial_options);
 
-	//printf("\n\rmaXTouch data USART transmitter\n\r");
 	for (int i = 0; i<cicles_size;i++)
 	{
 		wash_times[i]=wash_time(cicles,i);
